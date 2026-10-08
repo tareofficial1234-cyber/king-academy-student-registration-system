@@ -1,0 +1,16 @@
+{
+  "name": "king-academy-registration-system",
+  "version": "1.2.0",
+  "description": "Student Registration Management System for King Academy School",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "multer": "^2.0.2"
+  }
+}

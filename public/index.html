@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>King Academy School — Student Registration Management System</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<div id="toast"></div>
+<section id="loginPage" class="login-page">
+  <div class="login-card">
+    <div class="brand-center"><div class="logo-mark"><i class="fa-solid fa-crown"></i><i class="fa-solid fa-book-open"></i></div><h1>KING ACADEMY SCHOOL</h1><p>Knowledge • Character • Future</p></div>
+    <h2>Student Registration Management System</h2>
+    <form id="loginForm"><label>Username<input id="username" value="admin" required></label><label>Password<div class="password-wrap"><input id="password" type="password" value="admin123" required><button type="button" id="togglePass"><i class="fa-solid fa-eye"></i></button></div></label><button class="btn primary full" type="submit">Sign In</button></form>
+    <small>Default development login: admin / admin123</small>
+  </div>
+</section>
+<div id="app" class="app hidden">
+<header class="topbar"><div class="school-brand"><div class="mini-logo"><i class="fa-solid fa-crown"></i><i class="fa-solid fa-book-open"></i></div><div><strong>KING ACADEMY SCHOOL</strong><span>Knowledge • Character • Future</span></div></div><div class="top-title">Student Registration Management System</div><div class="top-user"><button class="icon-btn" title="Notifications"><i class="fa-regular fa-bell"></i><b>3</b></button><div class="avatar"><i class="fa-solid fa-user"></i></div><div><strong>Admin</strong><span>Administrator</span></div><button id="logoutBtn" class="icon-btn" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></button></div></header>
+<div class="layout">
+<aside class="sidebar">
+<nav>
+<button class="nav-item active" data-view="dashboard"><i class="fa-solid fa-house"></i>Dashboard</button>
+<button class="nav-item" data-view="students"><i class="fa-solid fa-users"></i>Students</button>
+<button class="nav-item" data-view="registration"><i class="fa-solid fa-plus"></i>New Registration</button>
+<button class="nav-item" data-view="search"><i class="fa-solid fa-magnifying-glass"></i>Search Student</button>
+<button class="nav-item" data-view="registrations"><i class="fa-solid fa-clipboard-list"></i>Manage Registrations</button>
+<button class="nav-item" data-view="documents"><i class="fa-solid fa-file-lines"></i>Documents</button>
+<button class="nav-item" data-view="marks"><i class="fa-solid fa-square-poll-vertical"></i>Yearly Marks</button>
+<button class="nav-item" data-view="idcards"><i class="fa-solid fa-id-card"></i>Student ID Cards</button>
+<button class="nav-item" data-view="reports"><i class="fa-solid fa-chart-column"></i>Reports</button>
+<button class="nav-item" data-view="roles"><i class="fa-solid fa-user-shield"></i>Users & Roles</button>
+<button class="nav-item" data-view="settings"><i class="fa-solid fa-gear"></i>Settings</button>
+<button class="nav-item" data-view="logs"><i class="fa-solid fa-clock-rotate-left"></i>Activity Logs</button>
+</nav><div class="sidebar-bottom"><button id="sideLogout" class="nav-item"><i class="fa-solid fa-right-from-bracket"></i>Logout</button></div>
+</aside>
+<main class="content" id="content"></main>
+</div></div>
+<div id="modal" class="modal hidden"><div class="modal-backdrop"></div><div class="modal-card" id="modalCard"></div></div>
+<script src="/js/app.js"></script>
+</body></html>

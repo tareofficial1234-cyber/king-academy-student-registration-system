@@ -8,11 +8,16 @@ const fs = require('fs');
 const app = express();
 const START_PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
-const uploadDir = path.join(ROOT, 'uploads');
+// On Render, set DATA_DIR and UPLOAD_DIR to folders on a mounted persistent disk.
+// Locally, the original project folders remain the defaults.
+const dataDir = process.env.DATA_DIR || path.join(ROOT, 'data');
+const uploadDir = process.env.UPLOAD_DIR || path.join(ROOT, 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
-fs.mkdirSync(path.join(ROOT, 'data'), { recursive: true });
+fs.mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(path.join(ROOT, 'data', 'king-academy.db'));
+const databasePath = process.env.DATABASE_PATH || path.join(dataDir, 'king-academy.db');
+const db = new Database(databasePath);
+console.log('Database file:', databasePath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 db.exec(`

@@ -129,3 +129,22 @@ The SQLite database is created automatically in `data/king-academy.db`. Student 
 
 ### Flexible Yearly Mark Entry
 The Yearly Marks screen now includes a Quick Yearly Mark Entry section. Admin can type/select a registered student name (or Student ID), choose the academic year, type any course/subject name, enter the mark and maximum mark, and save immediately. Course names are no longer limited to the built-in subject list; new course names are saved and become available for future entries.
+
+## Render deployment: keep student data after redeploys
+
+The application uses SQLite. To keep student records and uploaded files between Render deployments, the Render web service must have a **persistent disk** attached. Merely setting `MONGODB_URI` does not change this project, because this code does not use MongoDB.
+
+1. In the Render dashboard, open this web service and add a persistent disk. Use `/var/data` as its mount path. Persistent disks may require a paid Render plan; check Render's current plan and pricing before enabling one.
+2. In the service's Environment settings, add these variables:
+   - `DATA_DIR` = `/var/data`
+   - `UPLOAD_DIR` = `/var/data/uploads`
+   - `SESSION_SECRET` = a long, random secret value of your own
+3. Save the settings and redeploy the service.
+4. Register one test student, then redeploy once more and verify the student is still present before entering more records.
+
+The app will create `/var/data/king-academy.db` on the persistent disk. Student photos and supporting documents will be saved under `/var/data/uploads`.
+
+**Important:** Do not add a new empty database or delete any existing database until you have checked whether the old student records can be recovered. This ZIP does not include `data/king-academy.db`, so it cannot restore records that were already lost. If an existing database backup is available, keep a separate copy before restoring it.
+
+The student-registration pages, marks, rankings, reports, exports, and existing API routes have not been intentionally redesigned or replaced by this storage-path change.
+

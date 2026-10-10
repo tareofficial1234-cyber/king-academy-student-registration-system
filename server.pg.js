@@ -234,13 +234,13 @@ app.post(
   "/api/login",
   wrap(async (req, res) => {
     const { username, password } = req.body || {};
-    const expectedUser = process.env.ADMIN_USERNAME || "admin";
-    if (!expectedPass) {
-      return res
-        .status(500)
-        .json({ error: "Admin password is not configured" });
-    }
-    const expectedPass = process.env.ADMIN_PASSWORD || "admin123";
+ const expectedUser = process.env.ADMIN_USERNAME || "admin";
+const expectedPass = process.env.ADMIN_PASSWORD;
+if (!expectedPass) {
+  return res
+    .status(500)
+    .json({ error: "Admin password is not configured" });
+}
     if (username !== expectedUser || password !== expectedPass)
       return res.status(401).json({ error: "Invalid username or password" });
     req.session.user = { username: expectedUser, role: "admin" };

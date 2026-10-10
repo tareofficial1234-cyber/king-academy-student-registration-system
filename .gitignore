@@ -1,0 +1,10 @@
+uploads/
+.env
+.env.*
+!.env.example
+node_modules/
+data/
+*.db
+*.db-shm
+*.db-wal
+migration-data.json

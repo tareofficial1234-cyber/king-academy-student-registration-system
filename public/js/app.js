@@ -1,54 +1,254 @@
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-let currentView='dashboard', options={grades:[],academic_years:[],subjects:[]}, marksStudentId=null;
-const api=async(url,opts={})=>{const r=await fetch(url,opts);if(!r.ok){let e={};try{e=await r.json()}catch{}throw new Error(e.error||'Request failed')}return r.headers.get('content-type')?.includes('application/json')?r.json():r};
-async function loadOptions(){options=await api('/api/options');}
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fullName=s=>[s.first_name,s.middle_name,s.last_name].filter(Boolean).join(' ');
-const fmt=s=>s?new Date(String(s).replace(' ','T')+'Z').toLocaleDateString([], {month:'short',day:'numeric',year:'numeric'}):'—';
-const money=n=>Number(n||0).toFixed(2);
-function toast(msg){const d=document.createElement('div');d.className='toast-item';d.textContent=msg;$('#toast').appendChild(d);setTimeout(()=>d.remove(),3200)}
-function badge(s){return `<span class="badge ${String(s).toLowerCase().replaceAll(' ','-')}">${esc(s)}</span>`}
-function gradeOrder(a,b){const n=x=>x.startsWith('KG')?parseInt(x.slice(3)):4+parseInt(x.replace('Grade ',''));return n(a)-n(b)}
-async function init(){try{options=await api('/api/options');const me=await api('/api/me');me.authenticated?showApp():showLogin()}catch(e){toast(e.message)}}
-function showLogin(){$('#loginPage').classList.remove('hidden');$('#app').classList.add('hidden')}
-function showApp(){$('#loginPage').classList.add('hidden');$('#app').classList.remove('hidden');loadView('dashboard')}
-$('#loginForm').addEventListener('submit',async e=>{e.preventDefault();try{await api('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('#username').value,password:$('#password').value})});showApp()}catch(e){toast(e.message)}});
-$('#togglePass').onclick=()=>$('#password').type=$('#password').type==='password'?'text':'password';
-async function logout(){await api('/api/logout',{method:'POST'});showLogin()}
-$('#logoutBtn').onclick=logout;$('#sideLogout').onclick=logout;$$('.nav-item[data-view]').forEach(b=>b.onclick=()=>loadView(b.dataset.view));
-function nav(view){$$('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.view===view))}
-async function loadView(view){currentView=view;nav(view);try{if(view==='dashboard')return renderDashboard();if(view==='registration')return renderRegistration();if(['students','search','registrations'].includes(view))return renderStudents(view);if(view==='marks')return renderMarks();if(view==='idcards')return renderIdCards();if(view==='reports')return renderReports();if(view==='documents')return renderDocuments();if(view==='roles')return renderRoles();if(view==='settings')return renderSettings();if(view==='logs')return renderLogs()}catch(e){toast(e.message)}}
+const $ = (s) => document.querySelector(s),
+  $$ = (s) => document.querySelectorAll(s);
+let currentView = "dashboard",
+  options = { grades: [], academic_years: [], subjects: [] },
+  marksStudentId = null;
+const api = async (url, opts = {}) => {
+  const r = await fetch(url, opts);
+  if (!r.ok) {
+    let e = {};
+    try {
+      e = await r.json();
+    } catch {}
+    throw new Error(e.error || "Request failed");
+  }
+  return r.headers.get("content-type")?.includes("application/json")
+    ? r.json()
+    : r;
+};
+async function loadOptions() {
+  options = await api("/api/options");
+}
+const esc = (s) =>
+  String(s ?? "").replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ],
+  );
+const fullName = (s) =>
+  [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ");
+const fmt = (s) =>
+  s
+    ? new Date(String(s).replace(" ", "T") + "Z").toLocaleDateString([], {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "—";
+const money = (n) => Number(n || 0).toFixed(2);
+function toast(msg) {
+  const d = document.createElement("div");
+  d.className = "toast-item";
+  d.textContent = msg;
+  $("#toast").appendChild(d);
+  setTimeout(() => d.remove(), 3200);
+}
+function badge(s) {
+  return `<span class="badge ${String(s).toLowerCase().replaceAll(" ", "-")}">${esc(s)}</span>`;
+}
+function gradeOrder(a, b) {
+  const n = (x) =>
+    x.startsWith("KG")
+      ? parseInt(x.slice(3))
+      : 4 + parseInt(x.replace("Grade ", ""));
+  return n(a) - n(b);
+}
+async function init() {
+  try {
+    options = await api("/api/options");
+    const me = await api("/api/me");
+    me.authenticated ? showApp() : showLogin();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+function showLogin() {
+  $("#loginPage").classList.remove("hidden");
+  $("#app").classList.add("hidden");
+}
+function showApp() {
+  $("#loginPage").classList.add("hidden");
+  $("#app").classList.remove("hidden");
+  loadView("dashboard");
+}
+$("#loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    await api("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: $("#username").value,
+        password: $("#password").value,
+      }),
+    });
+    showApp();
+  } catch (e) {
+    toast(e.message);
+  }
+});
+$("#togglePass").onclick = () =>
+  ($("#password").type =
+    $("#password").type === "password" ? "text" : "password");
+async function logout() {
+  await api("/api/logout", { method: "POST" });
+  showLogin();
+}
+$("#logoutBtn").onclick = logout;
+$("#sideLogout").onclick = logout;
+$$(".nav-item[data-view]").forEach(
+  (b) => (b.onclick = () => loadView(b.dataset.view)),
+);
+function nav(view) {
+  $$(".nav-item").forEach((x) =>
+    x.classList.toggle("active", x.dataset.view === view),
+  );
+}
+async function loadView(view) {
+  currentView = view;
+  nav(view);
+  try {
+    if (view === "dashboard") return renderDashboard();
+    if (view === "registration") return renderRegistration();
+    if (["students", "search", "registrations"].includes(view))
+      return renderStudents(view);
+    if (view === "marks") return renderMarks();
+    if (view === "idcards") return renderIdCards();
+    if (view === "reports") return renderReports();
+    if (view === "documents") return renderDocuments();
+    if (view === "roles") return renderRoles();
+    if (view === "settings") return renderSettings();
+    if (view === "logs") return renderLogs();
+  } catch (e) {
+    toast(e.message);
+  }
+}
 
-async function renderDashboard(){const d=await api('/api/dashboard'),s=d.stats,max=Math.max(...d.byGrade.map(x=>x.count),1);$('#content').innerHTML=`<div class="page-head"><div><h1>Welcome, Admin!</h1><p>King Academy School — registration, student IDs and academic records.</p></div><div>${new Date().toLocaleDateString()} &nbsp; <i class="fa-regular fa-clock"></i> ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div></div><div class="cards"><div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-users"></i></div><div><small>Total Registered</small><strong>${s.total}</strong><small>KG 1 – KG 4, Grade 1 – Grade 12</small></div></div><div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-user-plus"></i></div><div><small>New Registrations</small><strong>${s.today}</strong><small>Today</small></div></div><div class="stat-card"><div class="stat-icon orange"><i class="fa-regular fa-clock"></i></div><div><small>Pending</small><strong>${s.pending}</strong><small>Awaiting Approval</small></div></div><div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-trophy"></i></div><div><small>Top Academic Result</small><strong>${d.topAcademic[0]?money(d.topAcademic[0].average)+'%':'—'}</strong><small>${d.topAcademic[0]?esc(d.topAcademic[0].name):'No marks yet'}</small></div></div></div><div class="dash-grid"><div class="panel wide-panel"><h3>Registrations by Grade Level</h3><div class="bar-chart">${d.byGrade.length?d.byGrade.sort((a,b)=>gradeOrder(a.grade,b.grade)).map(x=>`<div class="bar-col"><strong>${x.count}</strong><div class="bar" style="height:${Math.max(8,x.count/max*82)}%"></div><span class="bar-label">${esc(x.grade)}</span></div>`).join(''):'<div class="empty">No registrations yet.</div>'}</div></div><div class="panel quick"><h3>Quick Actions</h3><button class="btn primary" onclick="loadView('registration')"><i class="fa-solid fa-user-plus"></i>Register New Student</button><button class="btn purple" onclick="loadView('idcards')"><i class="fa-solid fa-id-card"></i>Generate Student ID Cards</button><button class="btn success" onclick="loadView('marks')"><i class="fa-solid fa-square-poll-vertical"></i>Enter Yearly Marks</button><button class="btn warn" onclick="loadView('reports')"><i class="fa-solid fa-file-lines"></i>Generate Report Card</button><button class="btn dark" onclick="downloadCSV()"><i class="fa-solid fa-download"></i>Export Students</button></div></div><div class="panel table-panel"><div class="page-head"><h3>Recent Registrations</h3><button class="btn light" onclick="loadView('students')">View All →</button></div>${studentTable(d.recent)}</div><div class="panel"><div class="page-head"><h3>Top Students — ${esc(options.academic_years[0]||'Current Year')}</h3><button class="btn light" onclick="loadView('reports')">View Rankings</button></div>${d.topAcademic.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>Rank</th><th>Student</th><th>Grade</th><th>Average</th></tr></thead><tbody>${d.topAcademic.map(x=>`<tr><td><strong>#${x.rank}</strong></td><td>${esc(x.name)}</td><td>${esc(x.grade)}</td><td><strong>${money(x.average)}%</strong></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No yearly marks stored yet.</div>'}</div><div class="panel"><h3>Recent Activity</h3>${d.activities.map(a=>`<div class="activity-item"><strong>${esc(a.action)}</strong><span>${esc(a.description)}</span><span>${fmt(a.created_at)}</span></div>`).join('')}</div>`}
-function studentTable(rows){return `<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Student</th><th>Student ID</th><th>Grade</th><th>Year</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows.length?rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${esc(fullName(r))}</strong></td><td><strong class="id-text">${esc(r.registration_id)}</strong></td><td>${esc(r.grade)}</td><td>${esc(r.academic_year||'—')}</td><td>${badge(r.status)}</td><td><div class="mini-actions"><button title="View" onclick="viewStudent(${r.id})"><i class="fa-solid fa-eye"></i></button><button title="Edit" onclick="editStudent(${r.id})"><i class="fa-solid fa-pen"></i></button><button title="ID Card" onclick="printIdCard(${r.id})"><i class="fa-solid fa-id-card"></i></button><button title="Marks" onclick="openMarksFor(${r.id})"><i class="fa-solid fa-square-poll-vertical"></i></button><button title="Report Card" onclick="printReportCard(${r.id})"><i class="fa-solid fa-file-lines"></i></button><button title="Delete" onclick="deleteStudent(${r.id})"><i class="fa-solid fa-trash"></i></button></div></td></tr>`).join(''):`<tr><td colspan="7" class="empty">No students found.</td></tr>`}</tbody></table></div>`}
+async function renderDashboard() {
+  const d = await api("/api/dashboard"),
+    s = d.stats,
+    max = Math.max(...d.byGrade.map((x) => x.count), 1);
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>Welcome, Admin!</h1><p>King Academy School — registration, student IDs and academic records.</p></div><div>${new Date().toLocaleDateString()} &nbsp; <i class="fa-regular fa-clock"></i> ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div></div><div class="cards"><div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-users"></i></div><div><small>Total Registered</small><strong>${s.total}</strong><small>KG 1 – KG 4, Grade 1 – Grade 12</small></div></div><div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-user-plus"></i></div><div><small>New Registrations</small><strong>${s.today}</strong><small>Today</small></div></div><div class="stat-card"><div class="stat-icon orange"><i class="fa-regular fa-clock"></i></div><div><small>Pending</small><strong>${s.pending}</strong><small>Awaiting Approval</small></div></div><div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-trophy"></i></div><div><small>Top Academic Result</small><strong>${d.topAcademic[0] ? money(d.topAcademic[0].average) + "%" : "—"}</strong><small>${d.topAcademic[0] ? esc(d.topAcademic[0].name) : "No marks yet"}</small></div></div></div><div class="dash-grid"><div class="panel wide-panel"><h3>Registrations by Grade Level</h3><div class="bar-chart">${
+      d.byGrade.length
+        ? d.byGrade
+            .sort((a, b) => gradeOrder(a.grade, b.grade))
+            .map(
+              (x) =>
+                `<div class="bar-col"><strong>${x.count}</strong><div class="bar" style="height:${Math.max(8, (x.count / max) * 82)}%"></div><span class="bar-label">${esc(x.grade)}</span></div>`,
+            )
+            .join("")
+        : '<div class="empty">No registrations yet.</div>'
+    }</div></div><div class="panel quick"><h3>Quick Actions</h3><button class="btn primary" onclick="loadView('registration')"><i class="fa-solid fa-user-plus"></i>Register New Student</button><button class="btn purple" onclick="loadView('idcards')"><i class="fa-solid fa-id-card"></i>Generate Student ID Cards</button><button class="btn success" onclick="loadView('marks')"><i class="fa-solid fa-square-poll-vertical"></i>Enter Yearly Marks</button><button class="btn warn" onclick="loadView('reports')"><i class="fa-solid fa-file-lines"></i>Generate Report Card</button><button class="btn dark" onclick="downloadCSV()"><i class="fa-solid fa-download"></i>Export Students</button></div></div><div class="panel table-panel"><div class="page-head"><h3>Recent Registrations</h3><button class="btn light" onclick="loadView('students')">View All →</button></div>${studentTable(d.recent)}</div><div class="panel"><div class="page-head"><h3>Top Students — ${esc(options.academic_years[0] || "Current Year")}</h3><button class="btn light" onclick="loadView('reports')">View Rankings</button></div>${d.topAcademic.length ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>Rank</th><th>Student</th><th>Grade</th><th>Average</th></tr></thead><tbody>${d.topAcademic.map((x) => `<tr><td><strong>#${x.rank}</strong></td><td>${esc(x.name)}</td><td>${esc(x.grade)}</td><td><strong>${money(x.average)}%</strong></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">No yearly marks stored yet.</div>'}</div><div class="panel"><h3>Recent Activity</h3>${d.activities.map((a) => `<div class="activity-item"><strong>${esc(a.action)}</strong><span>${esc(a.description)}</span><span>${fmt(a.created_at)}</span></div>`).join("")}</div>`;
+}
+function studentTable(rows) {
+  return `<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Student</th><th>Student ID</th><th>Grade</th><th>Year</th><th>Status</th><th>Action</th></tr></thead><tbody>${rows.length ? rows.map((r, i) => `<tr><td>${i + 1}</td><td><strong>${esc(fullName(r))}</strong></td><td><strong class="id-text">${esc(r.registration_id)}</strong></td><td>${esc(r.grade)}</td><td>${esc(r.academic_year || "—")}</td><td>${badge(r.status)}</td><td><div class="mini-actions"><button title="View" onclick="viewStudent(${r.id})"><i class="fa-solid fa-eye"></i></button><button title="Edit" onclick="editStudent(${r.id})"><i class="fa-solid fa-pen"></i></button><button title="ID Card" onclick="printIdCard(${r.id})"><i class="fa-solid fa-id-card"></i></button><button title="Marks" onclick="openMarksFor(${r.id})"><i class="fa-solid fa-square-poll-vertical"></i></button><button title="Report Card" onclick="printReportCard(${r.id})"><i class="fa-solid fa-file-lines"></i></button><button title="Delete" onclick="deleteStudent(${r.id})"><i class="fa-solid fa-trash"></i></button></div></td></tr>`).join("") : `<tr><td colspan="7" class="empty">No students found.</td></tr>`}</tbody></table></div>`;
+}
 
-function renderRegistration(data={}){const gradeOpts=options.grades.map(x=>`<option ${data.grade===x?'selected':''}>${x}</option>`).join(''),yearOpts=options.academic_years.map(x=>`<option ${data.academic_year===x?'selected':''}>${x}</option>`).join('');$('#content').innerHTML=`<div class="page-head"><div><h1>${data.id?'Edit Student':'New Student Registration'}</h1><p>Registration covers KG 1, KG 2, KG 3, KG 4 and Grade 1–12.</p></div><div class="actions"><button class="btn light" onclick="loadView('students')">Back</button></div></div>${data.registration_id?`<div class="id-banner"><div><span>Student ID</span><strong>${esc(data.registration_id)}</strong></div><div class="actions"><button class="btn purple" onclick="printIdCard(${data.id})"><i class="fa-solid fa-id-card"></i>Print ID Card</button><button class="btn success" onclick="openMarksFor(${data.id})"><i class="fa-solid fa-square-poll-vertical"></i>Yearly Marks</button></div></div>`:'<div class="info-note"><i class="fa-solid fa-circle-info"></i> The system generates a permanent Student ID automatically when you save the student.</div>'}<div class="panel form-panel"><form id="studentForm" enctype="multipart/form-data"><div class="form-grid"><div class="section-title">Student Information</div><label>First Name *<input name="first_name" required value="${esc(data.first_name)}"></label><label>Middle Name<input name="middle_name" value="${esc(data.middle_name)}"></label><label>Last Name *<input name="last_name" required value="${esc(data.last_name)}"></label><label>Gender *<select name="gender" required><option value="">Select gender</option><option ${data.gender==='Male'?'selected':''}>Male</option><option ${data.gender==='Female'?'selected':''}>Female</option></select></label><label>Date of Birth<input type="date" name="date_of_birth" value="${esc(data.date_of_birth)}"></label><label>Grade / Level *<select name="grade" required>${gradeOpts}</select></label><label>Academic Year<select name="academic_year">${yearOpts}</select></label><label>Admission Date<input type="date" name="admission_date" value="${esc(data.admission_date||new Date().toISOString().slice(0,10))}"></label><label>Program<select name="program"><option>General</option><option ${data.program==='Natural Science'?'selected':''}>Natural Science</option><option ${data.program==='Social Science'?'selected':''}>Social Science</option></select></label><label>Phone<input name="phone" value="${esc(data.phone)}"></label><label>Email<input type="email" name="email" value="${esc(data.email)}"></label><label>Address<input name="address" value="${esc(data.address)}"></label><div class="section-title">Parent / Guardian</div><label>Guardian Name<input name="guardian_name" value="${esc(data.guardian_name)}"></label><label>Guardian Phone<input name="guardian_phone" value="${esc(data.guardian_phone)}"></label><label>Status<select name="status">${['Pending','Approved','Rejected','Cancelled'].map(x=>`<option ${data.status===x||(!data.status&&x==='Pending')?'selected':''}>${x}</option>`).join('')}</select></label><div></div><div class="section-title">Documents</div><label>Profile Photo<input type="file" name="photo" accept="image/*"></label><label>Supporting Document<input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></label><label class="full-row">Notes<textarea name="notes" rows="4">${esc(data.notes)}</textarea></label></div><div class="form-actions"><button type="button" class="btn light" onclick="loadView('students')">Cancel</button><button class="btn primary" type="submit"><i class="fa-solid fa-floppy-disk"></i>${data.id?'Update Student':'Register Student'}</button></div></form></div>`;$('#studentForm').onsubmit=e=>saveStudent(e,data.id)}
-async function saveStudent(e,id){e.preventDefault();try{const r=await api(id?`/api/students/${id}`:'/api/students',{method:id?'PUT':'POST',body:new FormData(e.target)});toast(id?'Student updated':'Student registered — ID '+r.registration_id);renderRegistration(r)}catch(err){toast(err.message)}}
+function renderRegistration(data = {}) {
+  const gradeOpts = options.grades
+      .map((x) => `<option ${data.grade === x ? "selected" : ""}>${x}</option>`)
+      .join(""),
+    yearOpts = options.academic_years
+      .map(
+        (x) =>
+          `<option ${data.academic_year === x ? "selected" : ""}>${x}</option>`,
+      )
+      .join("");
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>${data.id ? "Edit Student" : "New Student Registration"}</h1><p>Registration covers KG 1, KG 2, KG 3, KG 4 and Grade 1–12.</p></div><div class="actions"><button class="btn light" onclick="loadView('students')">Back</button></div></div>${data.registration_id ? `<div class="id-banner"><div><span>Student ID</span><strong>${esc(data.registration_id)}</strong></div><div class="actions"><button class="btn purple" onclick="printIdCard(${data.id})"><i class="fa-solid fa-id-card"></i>Print ID Card</button><button class="btn success" onclick="openMarksFor(${data.id})"><i class="fa-solid fa-square-poll-vertical"></i>Yearly Marks</button></div></div>` : '<div class="info-note"><i class="fa-solid fa-circle-info"></i> The system generates a permanent Student ID automatically when you save the student.</div>'}<div class="panel form-panel"><form id="studentForm" enctype="multipart/form-data"><div class="form-grid"><div class="section-title">Student Information</div><label>First Name *<input name="first_name" required value="${esc(data.first_name)}"></label><label>Middle Name<input name="middle_name" value="${esc(data.middle_name)}"></label><label>Last Name *<input name="last_name" required value="${esc(data.last_name)}"></label><label>Gender *<select name="gender" required><option value="">Select gender</option><option ${data.gender === "Male" ? "selected" : ""}>Male</option><option ${data.gender === "Female" ? "selected" : ""}>Female</option></select></label><label>Date of Birth<input type="date" name="date_of_birth" value="${esc(data.date_of_birth)}"></label><label>Grade / Level *<select name="grade" required>${gradeOpts}</select></label><label>Academic Year<select name="academic_year">${yearOpts}</select></label><label>Admission Date<input type="date" name="admission_date" value="${esc(data.admission_date || new Date().toISOString().slice(0, 10))}"></label><label>Program<select name="program"><option>General</option><option ${data.program === "Natural Science" ? "selected" : ""}>Natural Science</option><option ${data.program === "Social Science" ? "selected" : ""}>Social Science</option></select></label><label>Phone<input name="phone" value="${esc(data.phone)}"></label><label>Email<input type="email" name="email" value="${esc(data.email)}"></label><label>Address<input name="address" value="${esc(data.address)}"></label><div class="section-title">Parent / Guardian</div><label>Guardian Name<input name="guardian_name" value="${esc(data.guardian_name)}"></label><label>Guardian Phone<input name="guardian_phone" value="${esc(data.guardian_phone)}"></label><label>Status<select name="status">${["Pending", "Approved", "Rejected", "Cancelled"].map((x) => `<option ${data.status === x || (!data.status && x === "Pending") ? "selected" : ""}>${x}</option>`).join("")}</select></label><div></div><div class="section-title">Documents</div><label>Profile Photo<input type="file" name="photo" accept="image/*"></label><label>Supporting Document<input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></label><label class="full-row">Notes<textarea name="notes" rows="4">${esc(data.notes)}</textarea></label></div><div class="form-actions"><button type="button" class="btn light" onclick="loadView('students')">Cancel</button><button class="btn primary" type="submit"><i class="fa-solid fa-floppy-disk"></i>${data.id ? "Update Student" : "Register Student"}</button></div></form></div>`;
+  $("#studentForm").onsubmit = (e) => saveStudent(e, data.id);
+}
+async function saveStudent(e, id) {
+  e.preventDefault();
+  try {
+    const r = await api(id ? `/api/students/${id}` : "/api/students", {
+      method: id ? "PUT" : "POST",
+      body: new FormData(e.target),
+    });
+    toast(
+      id ? "Student updated" : "Student registered — ID " + r.registration_id,
+    );
+    renderRegistration(r);
+  } catch (err) {
+    toast(err.message);
+  }
+}
 
-async function renderStudents(view='students'){const q=view==='search'?'':'',rows=await api(`/api/students?q=${encodeURIComponent(q)}`);$('#content').innerHTML=`<div class="page-head"><div><h1>${view==='registrations'?'Manage Registrations':'Students'}</h1><p>Search, edit, view academic history, marks, ID cards and report cards.</p></div><div class="actions"><button class="btn primary" onclick="loadView('registration')"><i class="fa-solid fa-plus"></i>New Student</button><button class="btn purple" onclick="loadView('idcards')"><i class="fa-solid fa-id-card"></i>ID Cards</button></div></div><div class="searchbar"><input id="studentQ" placeholder="Search name, Student ID, phone or email"><select id="studentGrade"><option value="">All Grades</option>${options.grades.map(g=>`<option>${g}</option>`).join('')}</select><select id="studentStatus"><option value="">All Statuses</option>${['Pending','Approved','Rejected','Cancelled'].map(s=>`<option>${s}</option>`).join('')}</select><button class="btn primary" onclick="searchStudents()"><i class="fa-solid fa-magnifying-glass"></i>Search</button></div><div class="panel" id="studentsPanel">${studentTable(rows)}</div>`}
-async function searchStudents(){const q=$('#studentQ').value,grade=$('#studentGrade').value,status=$('#studentStatus').value;const rows=await api(`/api/students?q=${encodeURIComponent(q)}&grade=${encodeURIComponent(grade)}&status=${encodeURIComponent(status)}`);$('#studentsPanel').innerHTML=studentTable(rows)}
-async function viewStudent(id){const s=await api(`/api/students/${id}`),history=await api(`/api/student-results/${id}`);openModal(`<button class="modal-close" onclick="closeModal()">×</button><div class="profile-card"><div><div class="profile-photo">${s.photo?`<img src="/uploads/${esc(s.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">`:'<i class="fa-solid fa-user"></i>'}</div><div class="id-banner" style="margin-top:12px"><div><span>Student ID</span><strong>${esc(s.registration_id)}</strong></div></div></div><div><h2>${esc(fullName(s))}</h2><p>${badge(s.status)} &nbsp; ${esc(s.grade)} &nbsp; ${esc(s.academic_year||'')}</p><div class="info-grid"><div><small>Gender</small><strong>${esc(s.gender)}</strong></div><div><small>Date of Birth</small><strong>${esc(s.date_of_birth||'—')}</strong></div><div><small>Phone</small><strong>${esc(s.phone||'—')}</strong></div><div><small>Guardian</small><strong>${esc(s.guardian_name||'—')}</strong></div><div><small>Guardian Phone</small><strong>${esc(s.guardian_phone||'—')}</strong></div><div><small>Address</small><strong>${esc(s.address||'—')}</strong></div></div></div></div><div class="section-title">Academic History</div>${history.history.length?`<div class="table-wrap"><table class="data-table"><thead><tr><th>Academic Year</th><th>Grade</th><th>Total</th><th>Average</th><th>Rank</th><th>Result</th><th>Action</th></tr></thead><tbody>${history.history.map(y=>`<tr><td>${esc(y.academic_year)}</td><td>${esc(y.student.grade)}</td><td>${money(y.total)} / ${money(y.max_total)}</td><td><strong>${money(y.average)}%</strong></td><td>${y.rank?`#${y.rank} / ${y.class_size}`:'—'}</td><td>${badge(y.result)}</td><td><button class="btn light" onclick="printReportCard(${s.id},'${esc(y.academic_year)}')">Report Card</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No yearly marks have been entered yet.</div>'}<div class="modal-actions"><button class="btn primary" onclick="closeModal();openMarksFor(${s.id})">Enter / Edit Marks</button><button class="btn purple" onclick="closeModal();printIdCard(${s.id})">Print ID Card</button><button class="btn light" onclick="closeModal()">Close</button></div>`)}
-function openModal(html){$('#modalCard').innerHTML=html;$('#modal').classList.remove('hidden')};function closeModal(){$('#modal').classList.add('hidden');$('#modalCard').innerHTML=''}
-async function editStudent(id){renderRegistration(await api(`/api/students/${id}`))}
-async function deleteStudent(id){if(!confirm('Delete this student and all stored marks?'))return;await api(`/api/students/${id}`,{method:'DELETE'});toast('Student deleted');loadView('students')}
+async function renderStudents(view = "students") {
+  const q = view === "search" ? "" : "",
+    rows = await api(`/api/students?q=${encodeURIComponent(q)}`);
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>${view === "registrations" ? "Manage Registrations" : "Students"}</h1><p>Search, edit, view academic history, marks, ID cards and report cards.</p></div><div class="actions"><button class="btn primary" onclick="loadView('registration')"><i class="fa-solid fa-plus"></i>New Student</button><button class="btn purple" onclick="loadView('idcards')"><i class="fa-solid fa-id-card"></i>ID Cards</button></div></div><div class="searchbar"><input id="studentQ" placeholder="Search name, Student ID, phone or email"><select id="studentGrade"><option value="">All Grades</option>${options.grades.map((g) => `<option>${g}</option>`).join("")}</select><select id="studentStatus"><option value="">All Statuses</option>${["Pending", "Approved", "Rejected", "Cancelled"].map((s) => `<option>${s}</option>`).join("")}</select><button class="btn primary" onclick="searchStudents()"><i class="fa-solid fa-magnifying-glass"></i>Search</button></div><div class="panel" id="studentsPanel">${studentTable(rows)}</div>`;
+}
+async function searchStudents() {
+  const q = $("#studentQ").value,
+    grade = $("#studentGrade").value,
+    status = $("#studentStatus").value;
+  const rows = await api(
+    `/api/students?q=${encodeURIComponent(q)}&grade=${encodeURIComponent(grade)}&status=${encodeURIComponent(status)}`,
+  );
+  $("#studentsPanel").innerHTML = studentTable(rows);
+}
+async function viewStudent(id) {
+  const s = await api(`/api/students/${id}`),
+    history = await api(`/api/student-results/${id}`);
+  openModal(
+    `<button class="modal-close" onclick="closeModal()">×</button><div class="profile-card"><div><div class="profile-photo">${s.photo ? `<img src="/uploads/${esc(s.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : '<i class="fa-solid fa-user"></i>'}</div><div class="id-banner" style="margin-top:12px"><div><span>Student ID</span><strong>${esc(s.registration_id)}</strong></div></div></div><div><h2>${esc(fullName(s))}</h2><p>${badge(s.status)} &nbsp; ${esc(s.grade)} &nbsp; ${esc(s.academic_year || "")}</p><div class="info-grid"><div><small>Gender</small><strong>${esc(s.gender)}</strong></div><div><small>Date of Birth</small><strong>${esc(s.date_of_birth || "—")}</strong></div><div><small>Phone</small><strong>${esc(s.phone || "—")}</strong></div><div><small>Guardian</small><strong>${esc(s.guardian_name || "—")}</strong></div><div><small>Guardian Phone</small><strong>${esc(s.guardian_phone || "—")}</strong></div><div><small>Address</small><strong>${esc(s.address || "—")}</strong></div></div></div></div><div class="section-title">Academic History</div>${history.history.length ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>Academic Year</th><th>Grade</th><th>Total</th><th>Average</th><th>Rank</th><th>Result</th><th>Action</th></tr></thead><tbody>${history.history.map((y) => `<tr><td>${esc(y.academic_year)}</td><td>${esc(y.student.grade)}</td><td>${money(y.total)} / ${money(y.max_total)}</td><td><strong>${money(y.average)}%</strong></td><td>${y.rank ? `#${y.rank} / ${y.class_size}` : "—"}</td><td>${badge(y.result)}</td><td><button class="btn light" onclick="printReportCard(${s.id},'${esc(y.academic_year)}')">Report Card</button></td></tr>`).join("")}</tbody></table></div>` : '<div class="empty">No yearly marks have been entered yet.</div>'}<div class="modal-actions"><button class="btn primary" onclick="closeModal();openMarksFor(${s.id})">Enter / Edit Marks</button><button class="btn purple" onclick="closeModal();printIdCard(${s.id})">Print ID Card</button><button class="btn light" onclick="closeModal()">Close</button></div>`,
+  );
+}
+function openModal(html) {
+  $("#modalCard").innerHTML = html;
+  $("#modal").classList.remove("hidden");
+}
+function closeModal() {
+  $("#modal").classList.add("hidden");
+  $("#modalCard").innerHTML = "";
+}
+async function editStudent(id) {
+  renderRegistration(await api(`/api/students/${id}`));
+}
+async function deleteStudent(id) {
+  if (!confirm("Delete this student and all stored marks?")) return;
+  await api(`/api/students/${id}`, { method: "DELETE" });
+  toast("Student deleted");
+  loadView("students");
+}
 
-async function renderMarks(studentId=null,year=null){
-  marksStudentId=studentId||marksStudentId;
-  const students=await api('/api/students');
-  const chosen=marksStudentId?students.find(s=>s.id===Number(marksStudentId)):students[0];
-  if(!chosen){$('#content').innerHTML='<div class="panel empty">Register a student first.</div>';return}
-  marksStudentId=chosen.id;
-  const academicYear=year||$('#markYear')?.value||chosen.academic_year||options.academic_years[0];
-  const rows=await api(`/api/marks?student_id=${chosen.id}&academic_year=${encodeURIComponent(academicYear)}`);
-  const saved=Object.fromEntries(rows.map(r=>[r.subject,r]));
-  const result=await api(`/api/report-card/${chosen.id}?academic_year=${encodeURIComponent(academicYear)}`);
-  $('#content').innerHTML=`<div class="page-head"><div><h1>Yearly Marks & Results</h1><p>Enter a student's name and any course name directly. Total, average, rank and result are calculated automatically.</p></div><div class="actions"><button class="btn light" onclick="loadView('reports')">Reports</button><button class="btn purple" onclick="printReportCard(${chosen.id},'${esc(academicYear)}')"><i class="fa-solid fa-print"></i>Print Report Card</button></div></div>
+async function renderMarks(studentId = null, year = null) {
+  marksStudentId = studentId || marksStudentId;
+  const students = await api("/api/students");
+  const chosen = marksStudentId
+    ? students.find((s) => s.id === Number(marksStudentId))
+    : students[0];
+  if (!chosen) {
+    $("#content").innerHTML =
+      '<div class="panel empty">Register a student first.</div>';
+    return;
+  }
+  marksStudentId = chosen.id;
+  const academicYear =
+    year ||
+    $("#markYear")?.value ||
+    chosen.academic_year ||
+    options.academic_years[0];
+  const rows = await api(
+    `/api/marks?student_id=${chosen.id}&academic_year=${encodeURIComponent(academicYear)}`,
+  );
+  const saved = Object.fromEntries(rows.map((r) => [r.subject, r]));
+  const result = await api(
+    `/api/report-card/${chosen.id}?academic_year=${encodeURIComponent(academicYear)}`,
+  );
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>Yearly Marks & Results</h1><p>Enter a student's name and any course name directly. Total, average, rank and result are calculated automatically.</p></div><div class="actions"><button class="btn light" onclick="loadView('reports')">Reports</button><button class="btn purple" onclick="printReportCard(${chosen.id},'${esc(academicYear)}')"><i class="fa-solid fa-print"></i>Print Report Card</button></div></div>
   <div class="panel marks-quick-entry"><div class="page-head"><div><h3><i class="fa-solid fa-bolt"></i> Quick Yearly Mark Entry</h3><span>Type the student's name, type the course/subject name, and save the mark.</span></div></div>
     <div class="quick-mark-grid">
-      <label>Student Name<input id="quickStudentName" list="studentNames" placeholder="Type student name or ID" value="${esc(fullName(chosen))}"><datalist id="studentNames">${students.map(s=>`<option value="${esc(fullName(s))}" data-id="${s.id}">${esc(s.registration_id)} — ${esc(s.grade)}</option>`).join('')}</datalist></label>
+      <label>Student Name<input id="quickStudentName" list="studentNames" placeholder="Type student name or ID" value="${esc(fullName(chosen))}"><datalist id="studentNames">${students.map((s) => `<option value="${esc(fullName(s))}" data-id="${s.id}">${esc(s.registration_id)} — ${esc(s.grade)}</option>`).join("")}</datalist></label>
       <label>Student ID<input id="quickStudentId" readonly value="${esc(chosen.registration_id)}"></label>
-      <label>Academic Year<select id="quickMarkYear">${options.academic_years.map(y=>`<option ${y===academicYear?'selected':''}>${y}</option>`).join('')}</select></label>
-      <label>Course / Subject Name<input id="quickCourse" list="courseNames" placeholder="e.g. Mathematics, Afaan Oromo, Agriculture..."><datalist id="courseNames">${options.subjects.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label>
+      <label>Academic Year<select id="quickMarkYear">${options.academic_years.map((y) => `<option ${y === academicYear ? "selected" : ""}>${y}</option>`).join("")}</select></label>
+      <label>Course / Subject Name<input id="quickCourse" list="courseNames" placeholder="e.g. Mathematics, Afaan Oromo, Agriculture..."><datalist id="courseNames">${options.subjects.map((x) => `<option value="${esc(x)}">`).join("")}</datalist></label>
       <label>Mark<input id="quickScore" type="number" min="0" step="0.01" placeholder="0"></label>
       <label>Maximum Mark<input id="quickMax" type="number" min="1" step="0.01" value="100"></label>
       <label>Remark<input id="quickRemark" placeholder="Optional"></label>
@@ -56,49 +256,254 @@ async function renderMarks(studentId=null,year=null){
     </div>
     <div class="marks-help"><strong>Flexible courses:</strong> You are not limited to the default subjects. Type a new course name and it will be saved for future use in the course list.</div>
   </div>
-  <div class="marks-selector"><label>Current Student<select id="markStudent" onchange="openMarksFor(this.value)">${students.map(s=>`<option value="${s.id}" ${s.id===chosen.id?'selected':''}>${esc(fullName(s))} — ${esc(s.registration_id)} — ${esc(s.grade)}</option>`).join('')}</select></label><label>Academic Year<select id="markYear" onchange="loadStudentMarks()">${options.academic_years.map(y=>`<option ${y===academicYear?'selected':''}>${y}</option>`).join('')}</select></label></div>
-  <div class="marks-summary"><div><span>Total</span><strong id="liveTotal">${money(result.total)} / ${money(result.max_total)}</strong></div><div><span>Average</span><strong id="liveAverage">${money(result.average)}%</strong></div><div><span>Rank</span><strong>${result.rank?`#${result.rank} / ${result.class_size}`:'—'}</strong></div><div><span>Result</span><strong>${esc(result.result)}</strong></div></div>
+  <div class="marks-selector"><label>Current Student<select id="markStudent" onchange="openMarksFor(this.value)">${students.map((s) => `<option value="${s.id}" ${s.id === chosen.id ? "selected" : ""}>${esc(fullName(s))} — ${esc(s.registration_id)} — ${esc(s.grade)}</option>`).join("")}</select></label><label>Academic Year<select id="markYear" onchange="loadStudentMarks()">${options.academic_years.map((y) => `<option ${y === academicYear ? "selected" : ""}>${y}</option>`).join("")}</select></label></div>
+  <div class="marks-summary"><div><span>Total</span><strong id="liveTotal">${money(result.total)} / ${money(result.max_total)}</strong></div><div><span>Average</span><strong id="liveAverage">${money(result.average)}%</strong></div><div><span>Rank</span><strong>${result.rank ? `#${result.rank} / ${result.class_size}` : "—"}</strong></div><div><span>Result</span><strong>${esc(result.result)}</strong></div></div>
   <div class="marks-help"><strong>Bulk entry:</strong> You can also enter several courses below. Default courses and any custom courses already added to the system are shown.</div>
-  <div class="panel marks-bulk"><div class="table-wrap"><table class="data-table"><thead><tr><th>Course / Subject</th><th>Mark</th><th>Maximum</th><th>Percentage</th><th>Remark</th></tr></thead><tbody>${options.subjects.map(sub=>{const r=saved[sub]||{};return `<tr><td><strong>${esc(sub)}</strong></td><td><input class="mark-input mark-score" data-subject="${esc(sub)}" type="number" min="0" step="0.01" value="${r.score??''}"></td><td><input class="mark-input mark-max" data-subject="${esc(sub)}" type="number" min="1" step="0.01" value="${r.max_score??100}"></td><td><span class="live-percent" data-subject="${esc(sub)}">${r.max_score?money((r.score||0)*100/r.max_score):'0.00'}%</span></td><td><input class="mark-input mark-remark" data-subject="${esc(sub)}" value="${esc(r.remark||'')}"></td></tr>`}).join('')}</tbody></table></div><div class="form-actions"><button class="btn light" onclick="loadStudentMarks()">Refresh</button><button class="btn success" onclick="saveAllMarks(${chosen.id})"><i class="fa-solid fa-floppy-disk"></i>Save All Marks</button></div></div>
+  <div class="panel marks-bulk"><div class="table-wrap"><table class="data-table"><thead><tr><th>Course / Subject</th><th>Mark</th><th>Maximum</th><th>Percentage</th><th>Remark</th></tr></thead><tbody>${options.subjects
+    .map((sub) => {
+      const r = saved[sub] || {};
+      return `<tr><td><strong>${esc(sub)}</strong></td><td><input class="mark-input mark-score" data-subject="${esc(sub)}" type="number" min="0" step="0.01" value="${r.score ?? ""}"></td><td><input class="mark-input mark-max" data-subject="${esc(sub)}" type="number" min="1" step="0.01" value="${r.max_score ?? 100}"></td><td><span class="live-percent" data-subject="${esc(sub)}">${r.max_score ? money(((r.score || 0) * 100) / r.max_score) : "0.00"}%</span></td><td><input class="mark-input mark-remark" data-subject="${esc(sub)}" value="${esc(r.remark || "")}"></td></tr>`;
+    })
+    .join(
+      "",
+    )}</tbody></table></div><div class="form-actions"><button class="btn light" onclick="loadStudentMarks()">Refresh</button><button class="btn success" onclick="saveAllMarks(${chosen.id})"><i class="fa-solid fa-floppy-disk"></i>Save All Marks</button></div></div>
   <div class="panel inner-panel"><div class="page-head"><h3>Saved Marks</h3><span>${rows.length} course(s) stored</span></div>${marksTable(rows)}</div>`;
-  $('#quickStudentName').addEventListener('input',()=>syncQuickStudent(students));
-  $('#quickStudentName').addEventListener('change',()=>syncQuickStudent(students));
-  $$('.mark-score,.mark-max').forEach(i=>i.addEventListener('input',updateLiveSummary));
+  $("#quickStudentName").addEventListener("input", () =>
+    syncQuickStudent(students),
+  );
+  $("#quickStudentName").addEventListener("change", () =>
+    syncQuickStudent(students),
+  );
+  $$(".mark-score,.mark-max").forEach((i) =>
+    i.addEventListener("input", updateLiveSummary),
+  );
 }
-function syncQuickStudent(students){const val=$('#quickStudentName')?.value.trim().toLowerCase();const s=students.find(x=>fullName(x).toLowerCase()===val||x.registration_id.toLowerCase()===val);if(s){marksStudentId=s.id;$('#quickStudentId').value=s.registration_id;}}
-async function saveQuickMark(){
-  const students=await api('/api/students'); const val=$('#quickStudentName').value.trim().toLowerCase();
-  const student=students.find(x=>fullName(x).toLowerCase()===val||x.registration_id.toLowerCase()===val);
-  if(!student)return toast('Select or type an exact registered student name or ID.');
-  const course=$('#quickCourse').value.trim(),score=Number($('#quickScore').value),max=Number($('#quickMax').value||100),year=$('#quickMarkYear').value;
-  if(!course)return toast('Enter the course/subject name.');
-  if(Number.isNaN(score)||score<0||max<=0||score>max)return toast('Enter a valid mark and maximum mark.');
-  await api('/api/subjects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:course})});
-  await api('/api/marks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:student.id,academic_year:year,subject:course,score,max_score:max,remark:$('#quickRemark').value.trim()})});
-  toast(`${course} mark saved for ${fullName(student)}`); marksStudentId=student.id; await loadOptions(); await renderMarks(student.id,year);
+function syncQuickStudent(students) {
+  const val = $("#quickStudentName")?.value.trim().toLowerCase();
+  const s = students.find(
+    (x) =>
+      fullName(x).toLowerCase() === val ||
+      x.registration_id.toLowerCase() === val,
+  );
+  if (s) {
+    marksStudentId = s.id;
+    $("#quickStudentId").value = s.registration_id;
+  }
 }
-async function openMarksFor(id){marksStudentId=Number(id);await renderMarks(marksStudentId)}
-async function loadStudentMarks(){await renderMarks(marksStudentId,$('#markYear')?.value)}
-function updateLiveSummary(){let total=0,max=0;$$('.mark-score').forEach(i=>{const sub=i.dataset.subject,m=document.querySelector(`.mark-max[data-subject="${CSS.escape(sub)}"]`),out=document.querySelector(`.live-percent[data-subject="${CSS.escape(sub)}"]`),score=Number(i.value),mx=Number(m?.value||100);if(i.value!==''){total+=score;max+=mx}out.textContent=(mx>0&&i.value!=='')?money(score*100/mx)+'%':'0.00%'});$('#liveTotal').textContent=`${money(total)} / ${money(max)}`;$('#liveAverage').textContent=(max?money(total*100/max):'0.00')+'%'}
-async function saveAllMarks(studentId){const year=$('#markYear').value;const requests=[];$$('.mark-score').forEach(score=>{if(score.value==='')return;const sub=score.dataset.subject,max=document.querySelector(`.mark-max[data-subject="${CSS.escape(sub)}"]`).value||100,remark=document.querySelector(`.mark-remark[data-subject="${CSS.escape(sub)}"]`).value;requests.push(api('/api/marks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:studentId,academic_year:year,subject:sub,score:score.value,max_score:max,remark})}))});if(!requests.length)return toast('Enter at least one subject score.');try{await Promise.all(requests);toast('All yearly marks saved successfully');await renderMarks(studentId,year)}catch(e){toast(e.message)}}
-function marksTable(rows){if(!rows.length)return '<div class="empty">No marks stored for this academic year.</div>';const total=rows.reduce((a,r)=>a+Number(r.score),0),max=rows.reduce((a,r)=>a+Number(r.max_score),0);return `<div class="table-wrap"><table class="data-table"><thead><tr><th>Subject</th><th>Score</th><th>Percent</th><th>Remark</th><th>Action</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.subject)}</strong></td><td>${money(r.score)} / ${money(r.max_score)}</td><td>${money(r.score*100/r.max_score)}%</td><td>${esc(r.remark||'—')}</td><td><button class="mini-delete" onclick="deleteMark(${r.id})"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')}</tbody></table></div><div class="mark-summary"><span>Current saved total</span><strong>${money(total)} / ${money(max)} &nbsp; (${max?money(total*100/max):'0.00'}%)</strong></div>`}
-async function deleteMark(id){if(!confirm('Delete this subject mark?'))return;await api(`/api/marks/${id}`,{method:'DELETE'});toast('Mark deleted');loadStudentMarks()}
+async function saveQuickMark() {
+  const students = await api("/api/students");
+  const val = $("#quickStudentName").value.trim().toLowerCase();
+  const student = students.find(
+    (x) =>
+      fullName(x).toLowerCase() === val ||
+      x.registration_id.toLowerCase() === val,
+  );
+  if (!student)
+    return toast("Select or type an exact registered student name or ID.");
+  const course = $("#quickCourse").value.trim(),
+    score = Number($("#quickScore").value),
+    max = Number($("#quickMax").value || 100),
+    year = $("#quickMarkYear").value;
+  if (!course) return toast("Enter the course/subject name.");
+  if (Number.isNaN(score) || score < 0 || max <= 0 || score > max)
+    return toast("Enter a valid mark and maximum mark.");
+  await api("/api/subjects", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: course }),
+  });
+  await api("/api/marks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      student_id: student.id,
+      academic_year: year,
+      subject: course,
+      score,
+      max_score: max,
+      remark: $("#quickRemark").value.trim(),
+    }),
+  });
+  toast(`${course} mark saved for ${fullName(student)}`);
+  marksStudentId = student.id;
+  await loadOptions();
+  await renderMarks(student.id, year);
+}
+async function openMarksFor(id) {
+  marksStudentId = Number(id);
+  await renderMarks(marksStudentId);
+}
+async function loadStudentMarks() {
+  await renderMarks(marksStudentId, $("#markYear")?.value);
+}
+function updateLiveSummary() {
+  let total = 0,
+    max = 0;
+  $$(".mark-score").forEach((i) => {
+    const sub = i.dataset.subject,
+      m = document.querySelector(
+        `.mark-max[data-subject="${CSS.escape(sub)}"]`,
+      ),
+      out = document.querySelector(
+        `.live-percent[data-subject="${CSS.escape(sub)}"]`,
+      ),
+      score = Number(i.value),
+      mx = Number(m?.value || 100);
+    if (i.value !== "") {
+      total += score;
+      max += mx;
+    }
+    out.textContent =
+      mx > 0 && i.value !== "" ? money((score * 100) / mx) + "%" : "0.00%";
+  });
+  $("#liveTotal").textContent = `${money(total)} / ${money(max)}`;
+  $("#liveAverage").textContent =
+    (max ? money((total * 100) / max) : "0.00") + "%";
+}
+async function saveAllMarks(studentId) {
+  const year = $("#markYear").value;
+  const requests = [];
+  $$(".mark-score").forEach((score) => {
+    if (score.value === "") return;
+    const sub = score.dataset.subject,
+      max =
+        document.querySelector(`.mark-max[data-subject="${CSS.escape(sub)}"]`)
+          .value || 100,
+      remark = document.querySelector(
+        `.mark-remark[data-subject="${CSS.escape(sub)}"]`,
+      ).value;
+    requests.push(
+      api("/api/marks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_id: studentId,
+          academic_year: year,
+          subject: sub,
+          score: score.value,
+          max_score: max,
+          remark,
+        }),
+      }),
+    );
+  });
+  if (!requests.length) return toast("Enter at least one subject score.");
+  try {
+    await Promise.all(requests);
+    toast("All yearly marks saved successfully");
+    await renderMarks(studentId, year);
+  } catch (e) {
+    toast(e.message);
+  }
+}
+function marksTable(rows) {
+  if (!rows.length)
+    return '<div class="empty">No marks stored for this academic year.</div>';
+  const total = rows.reduce((a, r) => a + Number(r.score), 0),
+    max = rows.reduce((a, r) => a + Number(r.max_score), 0);
+  return `<div class="table-wrap"><table class="data-table"><thead><tr><th>Subject</th><th>Score</th><th>Percent</th><th>Remark</th><th>Action</th></tr></thead><tbody>${rows.map((r) => `<tr><td><strong>${esc(r.subject)}</strong></td><td>${money(r.score)} / ${money(r.max_score)}</td><td>${money((r.score * 100) / r.max_score)}%</td><td>${esc(r.remark || "—")}</td><td><button class="mini-delete" onclick="deleteMark(${r.id})"><i class="fa-solid fa-trash"></i></button></td></tr>`).join("")}</tbody></table></div><div class="mark-summary"><span>Current saved total</span><strong>${money(total)} / ${money(max)} &nbsp; (${max ? money((total * 100) / max) : "0.00"}%)</strong></div>`;
+}
+async function deleteMark(id) {
+  if (!confirm("Delete this subject mark?")) return;
+  await api(`/api/marks/${id}`, { method: "DELETE" });
+  toast("Mark deleted");
+  loadStudentMarks();
+}
 
-async function renderReports(){const year=options.academic_years[0],rows=await api(`/api/results?academic_year=${encodeURIComponent(year)}`);$('#content').innerHTML=`<div class="page-head"><div><h1>Academic Reports</h1><p>Yearly results, class ranking and printable report cards.</p></div><div class="actions"><button class="btn purple" onclick="downloadResultsCSV()">Export Yearly Results</button><button class="btn success" onclick="downloadSubjectCSV()">Export Subject Marks</button></div></div><div class="searchbar"><select id="reportYear" onchange="loadRanking()">${options.academic_years.map(y=>`<option ${y===year?'selected':''}>${y}</option>`).join('')}</select><select id="reportGrade" onchange="loadRanking()"><option value="">All Grades</option>${options.grades.map(g=>`<option>${g}</option>`).join('')}</select><div></div><button class="btn primary" onclick="loadRanking()">Refresh Results</button></div><div class="cards"><div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-ranking-star"></i></div><div><small>Students With Marks</small><strong id="resultCount">${rows.rows.length}</strong><small>Selected year / grade</small></div></div><div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-medal"></i></div><div><small>Highest Average</small><strong id="highestAverage">${rows.rows[0]?money(rows.rows[0].average)+'%':'—'}</strong><small>${rows.rows[0]?esc(fullName(rows.rows[0].student)):'No result'}</small></div></div></div><div class="panel"><div class="page-head"><h3>Class Ranking</h3><span>Rank is calculated within the selected grade and academic year.</span></div><div id="rankingTable">${rankingTable(rows.rows)}</div></div><div class="report-grid"><div class="report-card"><i class="fa-solid fa-file-lines"></i><h3>Individual Report Card</h3><p>Choose a student from the ranking table and print a full annual report card.</p></div><div class="report-card"><i class="fa-solid fa-clock-rotate-left"></i><h3>Academic History</h3><p>Each student keeps yearly marks, total, average, rank and result from year to year.</p></div><div class="report-card"><i class="fa-solid fa-file-excel"></i><h3>Exports</h3><p>Export yearly summaries or individual subject marks for Excel/CSV processing.</p></div></div>`}
-function rankingTable(rows){if(!rows.length)return '<div class="empty">No marks found for this selection.</div>';return `<div class="table-wrap"><table class="data-table"><thead><tr><th>Rank</th><th>Student</th><th>Student ID</th><th>Grade</th><th>Subjects</th><th>Total</th><th>Average</th><th>Result</th><th>Action</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>#${r.rank}</strong></td><td>${esc(fullName(r.student))}</td><td class="id-text">${esc(r.student.registration_id)}</td><td>${esc(r.student.grade)}</td><td>${r.subjects_count}</td><td>${money(r.total)} / ${money(r.max_total)}</td><td><strong>${money(r.average)}%</strong></td><td>${badge(r.result)}</td><td><div class="mini-actions"><button title="Report Card" onclick="printReportCard(${r.student.id},'${esc(r.academic_year)}')"><i class="fa-solid fa-file-lines"></i></button><button title="Marks" onclick="openMarksFor(${r.student.id})"><i class="fa-solid fa-square-poll-vertical"></i></button></div></td></tr>`).join('')}</tbody></table></div>`}
-async function loadRanking(){const year=$('#reportYear').value,grade=$('#reportGrade').value;const d=await api(`/api/results?academic_year=${encodeURIComponent(year)}&grade=${encodeURIComponent(grade)}`);$('#rankingTable').innerHTML=rankingTable(d.rows);$('#resultCount').textContent=d.rows.length;$('#highestAverage').textContent=d.rows[0]?money(d.rows[0].average)+'%':'—'}
+async function renderReports() {
+  const year = options.academic_years[0],
+    rows = await api(`/api/results?academic_year=${encodeURIComponent(year)}`);
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>Academic Reports</h1><p>Yearly results, class ranking and printable report cards.</p></div><div class="actions"><button class="btn purple" onclick="downloadResultsCSV()">Export Yearly Results</button><button class="btn success" onclick="downloadSubjectCSV()">Export Subject Marks</button></div></div><div class="searchbar"><select id="reportYear" onchange="loadRanking()">${options.academic_years.map((y) => `<option ${y === year ? "selected" : ""}>${y}</option>`).join("")}</select><select id="reportGrade" onchange="loadRanking()"><option value="">All Grades</option>${options.grades.map((g) => `<option>${g}</option>`).join("")}</select><div></div><button class="btn primary" onclick="loadRanking()">Refresh Results</button></div><div class="cards"><div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-ranking-star"></i></div><div><small>Students With Marks</small><strong id="resultCount">${rows.rows.length}</strong><small>Selected year / grade</small></div></div><div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-medal"></i></div><div><small>Highest Average</small><strong id="highestAverage">${rows.rows[0] ? money(rows.rows[0].average) + "%" : "—"}</strong><small>${rows.rows[0] ? esc(fullName(rows.rows[0].student)) : "No result"}</small></div></div></div><div class="panel"><div class="page-head"><h3>Class Ranking</h3><span>Rank is calculated within the selected grade and academic year.</span></div><div id="rankingTable">${rankingTable(rows.rows)}</div></div><div class="report-grid"><div class="report-card"><i class="fa-solid fa-file-lines"></i><h3>Individual Report Card</h3><p>Choose a student from the ranking table and print a full annual report card.</p></div><div class="report-card"><i class="fa-solid fa-clock-rotate-left"></i><h3>Academic History</h3><p>Each student keeps yearly marks, total, average, rank and result from year to year.</p></div><div class="report-card"><i class="fa-solid fa-file-excel"></i><h3>Exports</h3><p>Export yearly summaries or individual subject marks for Excel/CSV processing.</p></div></div>`;
+}
+function rankingTable(rows) {
+  if (!rows.length)
+    return '<div class="empty">No marks found for this selection.</div>';
+  return `<div class="table-wrap"><table class="data-table"><thead><tr><th>Rank</th><th>Student</th><th>Student ID</th><th>Grade</th><th>Subjects</th><th>Total</th><th>Average</th><th>Result</th><th>Action</th></tr></thead><tbody>${rows.map((r) => `<tr><td><strong>#${r.rank}</strong></td><td>${esc(fullName(r.student))}</td><td class="id-text">${esc(r.student.registration_id)}</td><td>${esc(r.student.grade)}</td><td>${r.subjects_count}</td><td>${money(r.total)} / ${money(r.max_total)}</td><td><strong>${money(r.average)}%</strong></td><td>${badge(r.result)}</td><td><div class="mini-actions"><button title="Report Card" onclick="printReportCard(${r.student.id},'${esc(r.academic_year)}')"><i class="fa-solid fa-file-lines"></i></button><button title="Marks" onclick="openMarksFor(${r.student.id})"><i class="fa-solid fa-square-poll-vertical"></i></button></div></td></tr>`).join("")}</tbody></table></div>`;
+}
+async function loadRanking() {
+  const year = $("#reportYear").value,
+    grade = $("#reportGrade").value;
+  const d = await api(
+    `/api/results?academic_year=${encodeURIComponent(year)}&grade=${encodeURIComponent(grade)}`,
+  );
+  $("#rankingTable").innerHTML = rankingTable(d.rows);
+  $("#resultCount").textContent = d.rows.length;
+  $("#highestAverage").textContent = d.rows[0]
+    ? money(d.rows[0].average) + "%"
+    : "—";
+}
 
-async function printReportCard(studentId,year){const d=await api(`/api/report-card/${studentId}?academic_year=${encodeURIComponent(year||options.academic_years[0])}`);const s=d.student;const w=window.open('','_blank','width=1000,height=850');const rows=d.marks.map((m,i)=>`<tr><td>${i+1}</td><td>${esc(m.subject)}</td><td>${money(m.score)}</td><td>${money(m.max_score)}</td><td>${money(m.score*100/m.max_score)}%</td><td>${esc(m.remark||'—')}</td></tr>`).join('');w.document.write(`<!doctype html><html><head><title>King Academy Report Card - ${esc(s.registration_id)}</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#102a56;margin:0;background:#eef3f8}.sheet{width:900px;margin:25px auto;background:#fff;padding:35px;border:1px solid #d7e1ee;box-shadow:0 8px 30px #0001}.header{text-align:center;border-bottom:3px solid #0b4b98;padding-bottom:16px}.header h1{margin:0;color:#08336f;font-size:28px}.header p{margin:5px;color:#63789b}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}.meta div{background:#f5f8fc;padding:10px;border-radius:7px}.meta small{display:block;color:#6c819e;font-size:10px;text-transform:uppercase}.meta strong{display:block;margin-top:4px}.photo{position:absolute;width:90px;height:110px;object-fit:cover;border:2px solid #0b438a;border-radius:7px;right:35px;top:25px}.table{width:100%;border-collapse:collapse;margin-top:15px}.table th,.table td{border:1px solid #d8e1ec;padding:9px;font-size:12px}.table th{background:#edf4fb;text-align:left}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.summary div{border:1px solid #d8e1ec;border-radius:8px;padding:13px;text-align:center}.summary small{display:block;color:#7186a3}.summary strong{display:block;font-size:20px;margin-top:5px;color:#0b4b98}.signature{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:70px}.signature div{border-top:1px solid #7c8da5;padding-top:8px;text-align:center;color:#617694}.print-btn{margin:20px auto;display:block;padding:12px 22px;border:0;background:#0b61c8;color:white;border-radius:7px;font-weight:700}@media print{body{background:#fff}.sheet{margin:0;width:auto;box-shadow:none;border:0}.print-btn{display:none}} </style></head><body><div class="sheet"><div class="header" style="position:relative">${s.photo?`<img class="photo" src="/uploads/${esc(s.photo)}">`:''}<h1>KING ACADEMY SCHOOL</h1><p>Knowledge • Character • Future</p><h2>STUDENT ANNUAL REPORT CARD</h2><p>Academic Year: <strong>${esc(d.academic_year)}</strong></p></div><div class="meta"><div><small>Student Name</small><strong>${esc(fullName(s))}</strong></div><div><small>Student ID</small><strong>${esc(s.registration_id)}</strong></div><div><small>Grade / Level</small><strong>${esc(s.grade)}</strong></div><div><small>Gender</small><strong>${esc(s.gender)}</strong></div></div><table class="table"><thead><tr><th>No.</th><th>Subject</th><th>Mark</th><th>Maximum</th><th>Percentage</th><th>Remark</th></tr></thead><tbody>${rows||'<tr><td colspan="6" style="text-align:center">No marks entered.</td></tr>'}</tbody></table><div class="summary"><div><small>Total</small><strong>${money(d.total)} / ${money(d.max_total)}</strong></div><div><small>Average</small><strong>${money(d.average)}%</strong></div><div><small>Rank</small><strong>${d.rank?`#${d.rank} / ${d.class_size}`:'—'}</strong></div><div><small>Result</small><strong>${esc(d.result)}</strong></div></div><div class="signature"><div>Class Teacher Signature</div><div>Principal Signature</div></div><button class="print-btn" onclick="window.print()">Print Report Card</button></div></body></html>`);w.document.close()}
+async function printReportCard(studentId, year) {
+  const d = await api(
+    `/api/report-card/${studentId}?academic_year=${encodeURIComponent(year || options.academic_years[0])}`,
+  );
+  const s = d.student;
+  const w = window.open("", "_blank", "width=1000,height=850");
+  const rows = d.marks
+    .map(
+      (m, i) =>
+        `<tr><td>${i + 1}</td><td>${esc(m.subject)}</td><td>${money(m.score)}</td><td>${money(m.max_score)}</td><td>${money((m.score * 100) / m.max_score)}%</td><td>${esc(m.remark || "—")}</td></tr>`,
+    )
+    .join("");
+  w.document.write(
+    `<!doctype html><html><head><title>King Academy Report Card - ${esc(s.registration_id)}</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#102a56;margin:0;background:#eef3f8}.sheet{width:900px;margin:25px auto;background:#fff;padding:35px;border:1px solid #d7e1ee;box-shadow:0 8px 30px #0001}.header{text-align:center;border-bottom:3px solid #0b4b98;padding-bottom:16px}.header h1{margin:0;color:#08336f;font-size:28px}.header p{margin:5px;color:#63789b}.meta{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}.meta div{background:#f5f8fc;padding:10px;border-radius:7px}.meta small{display:block;color:#6c819e;font-size:10px;text-transform:uppercase}.meta strong{display:block;margin-top:4px}.photo{position:absolute;width:90px;height:110px;object-fit:cover;border:2px solid #0b438a;border-radius:7px;right:35px;top:25px}.table{width:100%;border-collapse:collapse;margin-top:15px}.table th,.table td{border:1px solid #d8e1ec;padding:9px;font-size:12px}.table th{background:#edf4fb;text-align:left}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.summary div{border:1px solid #d8e1ec;border-radius:8px;padding:13px;text-align:center}.summary small{display:block;color:#7186a3}.summary strong{display:block;font-size:20px;margin-top:5px;color:#0b4b98}.signature{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:70px}.signature div{border-top:1px solid #7c8da5;padding-top:8px;text-align:center;color:#617694}.print-btn{margin:20px auto;display:block;padding:12px 22px;border:0;background:#0b61c8;color:white;border-radius:7px;font-weight:700}@media print{body{background:#fff}.sheet{margin:0;width:auto;box-shadow:none;border:0}.print-btn{display:none}} </style></head><body><div class="sheet"><div class="header" style="position:relative">${s.photo ? `<img class="photo" src="/uploads/${esc(s.photo)}">` : ""}<h1>KING ACADEMY SCHOOL</h1><p>Knowledge • Character • Future</p><h2>STUDENT ANNUAL REPORT CARD</h2><p>Academic Year: <strong>${esc(d.academic_year)}</strong></p></div><div class="meta"><div><small>Student Name</small><strong>${esc(fullName(s))}</strong></div><div><small>Student ID</small><strong>${esc(s.registration_id)}</strong></div><div><small>Grade / Level</small><strong>${esc(s.grade)}</strong></div><div><small>Gender</small><strong>${esc(s.gender)}</strong></div></div><table class="table"><thead><tr><th>No.</th><th>Subject</th><th>Mark</th><th>Maximum</th><th>Percentage</th><th>Remark</th></tr></thead><tbody>${rows || '<tr><td colspan="6" style="text-align:center">No marks entered.</td></tr>'}</tbody></table><div class="summary"><div><small>Total</small><strong>${money(d.total)} / ${money(d.max_total)}</strong></div><div><small>Average</small><strong>${money(d.average)}%</strong></div><div><small>Rank</small><strong>${d.rank ? `#${d.rank} / ${d.class_size}` : "—"}</strong></div><div><small>Result</small><strong>${esc(d.result)}</strong></div></div><div class="signature"><div>Class Teacher Signature</div><div>Principal Signature</div></div><button class="print-btn" onclick="window.print()">Print Report Card</button></div></body></html>`,
+  );
+  w.document.close();
+}
 
-async function renderIdCards(){const rows=await api('/api/students');$('#content').innerHTML=`<div class="page-head"><div><h1>Student ID Cards</h1><p>Generate individual or printable batches of King Academy student ID cards.</p></div><div class="actions"><button class="btn purple" onclick="printAllIdCards()"><i class="fa-solid fa-print"></i>Print All</button></div></div><div class="panel">${studentTable(rows)}</div>`}
-async function printIdCard(id){const s=await api(`/api/students/${id}`);const photo=s.photo?`<img src="/uploads/${esc(s.photo)}">`:'<div class="photo-placeholder"><i class="fa-solid fa-user"></i></div>';const w=window.open('','_blank','width=900,height=650');w.document.write(`<!doctype html><html><head><title>Student ID Card - ${esc(s.registration_id)}</title><style>*{box-sizing:border-box}body{margin:0;background:#eef3f8;font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh}.card{width:560px;height:350px;background:#fff;border-radius:20px;overflow:hidden;border:2px solid #0b438a}.head{height:86px;background:linear-gradient(110deg,#08336f,#0d58a8);color:white;display:flex;align-items:center;padding:14px 22px;gap:14px}.crown{font-size:35px;color:#ffbf24}.head strong{font-size:21px;display:block}.head span{font-size:12px}.body{display:flex;padding:22px;gap:22px}.photo{width:125px;height:155px;border:3px solid #0b438a;border-radius:10px;overflow:hidden;display:grid;place-items:center;background:#eaf1fa;color:#6e87a7;font-size:50px;flex:none}.photo img{width:100%;height:100%;object-fit:cover}.photo-placeholder{display:grid;place-items:center;width:100%;height:100%}.details{flex:1}.label{font-size:10px;color:#7084a0;text-transform:uppercase}.value{font-weight:800;font-size:18px;color:#0d376d;margin:2px 0 10px}.id{font-size:25px;color:#0b61c8}.footer{border-top:1px solid #e1e8f1;padding:10px 22px;display:flex;justify-content:space-between;color:#617694;font-size:11px}button{padding:10px;margin-top:20px}@media print{body{background:#fff}.card{box-shadow:none}}</style></head><body><div><div class="card"><div class="head"><div class="crown">♛</div><div><strong>KING ACADEMY SCHOOL</strong><span>Knowledge • Character • Future</span></div></div><div class="body"><div class="photo">${photo}</div><div class="details"><div class="label">Student ID</div><div class="value id">${esc(s.registration_id)}</div><div class="label">Student Name</div><div class="value">${esc(fullName(s))}</div><div class="label">Grade / Level</div><div class="value">${esc(s.grade)}</div><div class="label">Academic Year</div><div class="value">${esc(s.academic_year||'—')}</div><div class="label">Status</div><div class="value">${esc(s.status)}</div></div></div><div class="footer"><span>King Academy School</span><span>Student Identification Card</span></div></div><button onclick="window.print()">Print ID Card</button></div></body></html>`);w.document.close()}
-async function printAllIdCards(){const rows=await api('/api/students');if(!rows.length)return toast('No students to print');const w=window.open('','_blank');w.document.write(`<html><head><title>King Academy Student ID Cards</title><style>body{font-family:Arial;margin:20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{border:2px solid #0b438a;border-radius:14px;overflow:hidden;page-break-inside:avoid}.head{background:#08336f;color:white;padding:14px;font-weight:800}.body{padding:15px;display:flex;gap:15px}.photo{width:80px;height:100px;background:#eef3f8;display:grid;place-items:center}.photo img{width:100%;height:100%;object-fit:cover}.id{color:#0b61c8;font-size:18px;font-weight:800}.small{font-size:11px;color:#63789b}.value{font-weight:700;margin-bottom:7px}@media print{button{display:none}}</style></head><body><h2>King Academy School — Student ID Cards</h2><div class="grid">${rows.map(s=>`<div class="card"><div class="head">KING ACADEMY SCHOOL</div><div class="body"><div class="photo">${s.photo?`<img src="/uploads/${esc(s.photo)}">`:'👤'}</div><div><div class="small">STUDENT ID</div><div class="id">${esc(s.registration_id)}</div><div class="value">${esc(fullName(s))}</div><div class="small">GRADE</div><div class="value">${esc(s.grade)}</div><div class="small">ACADEMIC YEAR</div><div class="value">${esc(s.academic_year||'—')}</div></div></div></div>`).join('')}</div><button onclick="print()">Print</button></body></html>`);w.document.close()}
+async function renderIdCards() {
+  const rows = await api("/api/students");
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>Student ID Cards</h1><p>Generate individual or printable batches of King Academy student ID cards.</p></div><div class="actions"><button class="btn purple" onclick="printAllIdCards()"><i class="fa-solid fa-print"></i>Print All</button></div></div><div class="panel">${studentTable(rows)}</div>`;
+}
+async function printIdCard(id) {
+  const s = await api(`/api/students/${id}`);
+  const photo = s.photo
+    ? `<img src="/uploads/${esc(s.photo)}">`
+    : '<div class="photo-placeholder"><i class="fa-solid fa-user"></i></div>';
+  const w = window.open("", "_blank", "width=900,height=650");
+  w.document.write(
+    `<!doctype html><html><head><title>Student ID Card - ${esc(s.registration_id)}</title><style>*{box-sizing:border-box}body{margin:0;background:#eef3f8;font-family:Arial,sans-serif;display:grid;place-items:center;min-height:100vh}.card{width:560px;height:350px;background:#fff;border-radius:20px;overflow:hidden;border:2px solid #0b438a}.head{height:86px;background:linear-gradient(110deg,#08336f,#0d58a8);color:white;display:flex;align-items:center;padding:14px 22px;gap:14px}.crown{font-size:35px;color:#ffbf24}.head strong{font-size:21px;display:block}.head span{font-size:12px}.body{display:flex;padding:22px;gap:22px}.photo{width:125px;height:155px;border:3px solid #0b438a;border-radius:10px;overflow:hidden;display:grid;place-items:center;background:#eaf1fa;color:#6e87a7;font-size:50px;flex:none}.photo img{width:100%;height:100%;object-fit:cover}.photo-placeholder{display:grid;place-items:center;width:100%;height:100%}.details{flex:1}.label{font-size:10px;color:#7084a0;text-transform:uppercase}.value{font-weight:800;font-size:18px;color:#0d376d;margin:2px 0 10px}.id{font-size:25px;color:#0b61c8}.footer{border-top:1px solid #e1e8f1;padding:10px 22px;display:flex;justify-content:space-between;color:#617694;font-size:11px}button{padding:10px;margin-top:20px}@media print{body{background:#fff}.card{box-shadow:none}}</style></head><body><div><div class="card"><div class="head"><div class="crown">♛</div><div><strong>KING ACADEMY SCHOOL</strong><span>Knowledge • Character • Future</span></div></div><div class="body"><div class="photo">${photo}</div><div class="details"><div class="label">Student ID</div><div class="value id">${esc(s.registration_id)}</div><div class="label">Student Name</div><div class="value">${esc(fullName(s))}</div><div class="label">Grade / Level</div><div class="value">${esc(s.grade)}</div><div class="label">Academic Year</div><div class="value">${esc(s.academic_year || "—")}</div><div class="label">Status</div><div class="value">${esc(s.status)}</div></div></div><div class="footer"><span>King Academy School</span><span>Student Identification Card</span></div></div><button onclick="window.print()">Print ID Card</button></div></body></html>`,
+  );
+  w.document.close();
+}
+async function printAllIdCards() {
+  const rows = await api("/api/students");
+  if (!rows.length) return toast("No students to print");
+  const w = window.open("", "_blank");
+  w.document.write(
+    `<html><head><title>King Academy Student ID Cards</title><style>body{font-family:Arial;margin:20px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{border:2px solid #0b438a;border-radius:14px;overflow:hidden;page-break-inside:avoid}.head{background:#08336f;color:white;padding:14px;font-weight:800}.body{padding:15px;display:flex;gap:15px}.photo{width:80px;height:100px;background:#eef3f8;display:grid;place-items:center}.photo img{width:100%;height:100%;object-fit:cover}.id{color:#0b61c8;font-size:18px;font-weight:800}.small{font-size:11px;color:#63789b}.value{font-weight:700;margin-bottom:7px}@media print{button{display:none}}</style></head><body><h2>King Academy School — Student ID Cards</h2><div class="grid">${rows.map((s) => `<div class="card"><div class="head">KING ACADEMY SCHOOL</div><div class="body"><div class="photo">${s.photo ? `<img src="/uploads/${esc(s.photo)}">` : "👤"}</div><div><div class="small">STUDENT ID</div><div class="id">${esc(s.registration_id)}</div><div class="value">${esc(fullName(s))}</div><div class="small">GRADE</div><div class="value">${esc(s.grade)}</div><div class="small">ACADEMIC YEAR</div><div class="value">${esc(s.academic_year || "—")}</div></div></div></div>`).join("")}</div><button onclick="print()">Print</button></body></html>`,
+  );
+  w.document.close();
+}
 
-function renderDocuments(){$('#content').innerHTML=`<div class="page-head"><div><h1>Documents</h1><p>Student supporting documents are attached to each registration.</p></div></div><div class="panel"><p>Open a student profile to view registration details and uploaded documents.</p><button class="btn primary" onclick="loadView('students')">Open Students</button></div>`}
-function renderRoles(){$('#content').innerHTML=`<div class="page-head"><div><h1>Users & Roles</h1><p>Administrator access is enabled for this local version.</p></div></div><div class="panel"><h3>Administrator</h3><p><strong>Username:</strong> admin</p><p><strong>Role:</strong> Administrator</p><p>Default development password: <code>admin123</code></p></div>`}
-function renderSettings(){$('#content').innerHTML=`<div class="page-head"><div><h1>Settings</h1><p>King Academy School academic configuration.</p></div></div><div class="panel"><h3>Registration Levels</h3><p>Enabled levels: <strong>KG 1, KG 2, KG 3, KG 4, Grade 1 through Grade 12</strong>.</p><h3>Student ID Format</h3><p>New IDs use <strong>KA + admission year + four-digit sequence</strong>, for example <strong>KA20260001</strong>.</p><h3>Yearly Academic Results</h3><p>Marks are stored by student, academic year and subject. Total, average, rank and pass/fail result are calculated automatically.</p><h3>Ranking</h3><p>Rank is calculated within the same grade and academic year, ordered by average and then total. Tied totals/averages receive the same rank.</p></div>`}
-async function renderLogs(){const d=await api('/api/dashboard');$('#content').innerHTML=`<div class="page-head"><div><h1>Activity Logs</h1><p>Recent registration and academic record activity.</p></div></div><div class="panel">${d.activities.map(a=>`<div class="activity-item"><strong>${esc(a.action)}</strong><span>${esc(a.description)}</span><span>${fmt(a.created_at)}</span></div>`).join('')}</div>`}
-function downloadCSV(){window.location='/api/export.csv'}
-function downloadResultsCSV(){const y=$('#reportYear')?.value||options.academic_years[0],g=$('#reportGrade')?.value||'';window.location=`/api/export-marks.csv?academic_year=${encodeURIComponent(y)}&grade=${encodeURIComponent(g)}`}
-function downloadSubjectCSV(){window.location='/api/export-subject-marks.csv'}
+function renderDocuments() {
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>Documents</h1><p>Student supporting documents are attached to each registration.</p></div></div><div class="panel"><p>Open a student profile to view registration details and uploaded documents.</p><button class="btn primary" onclick="loadView('students')">Open Students</button></div>`;
+}
+function renderRoles() {
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>Users & Roles</h1><p>Administrator access is enabled for this local version.</p></div></div><div class="panel"><h3>Administrator</h3><p><strong>Username:</strong> admin</p><p><strong>Role:</strong> Administrator</p><p>Default development password: <code>admin123</code></p></div>`;
+}
+function renderSettings() {
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>Settings</h1><p>King Academy School academic configuration.</p></div></div><div class="panel"><h3>Registration Levels</h3><p>Enabled levels: <strong>KG 1, KG 2, KG 3, KG 4, Grade 1 through Grade 12</strong>.</p><h3>Student ID Format</h3><p>New IDs use <strong>KA + admission year + four-digit sequence</strong>, for example <strong>KA20260001</strong>.</p><h3>Yearly Academic Results</h3><p>Marks are stored by student, academic year and subject. Total, average, rank and pass/fail result are calculated automatically.</p><h3>Ranking</h3><p>Rank is calculated within the same grade and academic year, ordered by average and then total. Tied totals/averages receive the same rank.</p></div>`;
+}
+async function renderLogs() {
+  const d = await api("/api/dashboard");
+  $("#content").innerHTML =
+    `<div class="page-head"><div><h1>Activity Logs</h1><p>Recent registration and academic record activity.</p></div></div><div class="panel">${d.activities.map((a) => `<div class="activity-item"><strong>${esc(a.action)}</strong><span>${esc(a.description)}</span><span>${fmt(a.created_at)}</span></div>`).join("")}</div>`;
+}
+function downloadCSV() {
+  window.location = "/api/export.csv";
+}
+function downloadResultsCSV() {
+  const y = $("#reportYear")?.value || options.academic_years[0],
+    g = $("#reportGrade")?.value || "";
+  window.location = `/api/export-marks.csv?academic_year=${encodeURIComponent(y)}&grade=${encodeURIComponent(g)}`;
+}
+function downloadSubjectCSV() {
+  window.location = "/api/export-subject-marks.csv";
+}
 init();

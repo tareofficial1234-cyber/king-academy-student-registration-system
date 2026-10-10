@@ -266,6 +266,34 @@ app.get(
   }),
 );
 
+app.post(
+  "/api/subjects",
+  auth,
+  wrap(async (req, res) => {
+    
+const name = String(req.body?.name || req.body?.subject || "").trim();
+
+    if (!name) {
+      return res.status(400).json({
+        error: "Subject name is required",
+      });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO subjects(name)
+       VALUES($1)
+       ON CONFLICT(name) DO NOTHING
+       RETURNING name`,
+      [name],
+    );
+
+    res.status(201).json({
+      ok: true,
+      name: result.rows[0]?.name || name,
+    });
+  }),
+);
+
 app.get(
   "/api/students/:id",
   auth,

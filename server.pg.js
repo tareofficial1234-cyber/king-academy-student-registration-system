@@ -212,6 +212,10 @@ function auth(req, res, next) {
   if (req.session.user) return next();
   return res.status(401).json({ error: "Authentication required" });
 }
+function adminOnly(req, res, next) {
+  if (req.session.user?.role === "admin") return next();
+  return res.status(403).json({ error: "Administrator permission required" });
+}
 function wrap(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 }
@@ -282,6 +286,7 @@ app.get(
 app.post(
   "/api/subjects",
   auth,
+  adminOnly,
   wrap(async (req, res) => {
     
 const name = String(req.body?.name || req.body?.subject || "").trim();
@@ -459,6 +464,7 @@ app.put(
 app.patch(
   "/api/students/:id/status",
   auth,
+  adminOnly,
   wrap(async (req, res) => {
     const status = req.body?.status;
     if (!allowedStatuses.includes(status))
@@ -479,6 +485,7 @@ app.patch(
 app.delete(
   "/api/students/:id",
   auth,
+  adminOnly,
   wrap(async (req, res) => {
     const r = await pool.query("DELETE FROM students WHERE id=$1 RETURNING *", [
       req.params.id,
@@ -585,6 +592,7 @@ app.post(
 app.delete(
   "/api/marks/:id",
   auth,
+  adminOnly,
   wrap(async (req, res) => {
     const r = await pool.query("DELETE FROM marks WHERE id=$1 RETURNING *", [
       req.params.id,
@@ -751,7 +759,7 @@ app.get(
 
 
 const attendanceStatuses = ["Present", "Absent", "Late", "Excused"];
-function validAttendanceDate(value) { return /^\\d{4}-\\d{2}-\\d{2}$/.test(String(value || "")); }
+function validAttendanceDate(value) { return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")); }
 app.get("/api/attendance/summary", auth, wrap(async (req, res) => {
   const date = validAttendanceDate(req.query.date) ? req.query.date : new Date().toISOString().slice(0, 10);
   const values = [date]; let gradeClause = "";

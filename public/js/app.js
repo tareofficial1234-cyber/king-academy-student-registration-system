@@ -524,7 +524,7 @@ async function renderLogs() {
 }
 
 async function renderAttendance() {
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = new Date().toISOString().slice(0, 10);
   $("#content").innerHTML = `
     <section class="attendance-hero">
       <div class="attendance-hero-copy">

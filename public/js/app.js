@@ -71,6 +71,15 @@ function showLogin() {
 function showApp() {
   $("#loginPage").classList.add("hidden");
   $("#app").classList.remove("hidden");
+  api("/api/me").then(me => {
+    const user = me.user;
+    if (user) {
+      const name = document.querySelector(".top-user strong");
+      const role = document.querySelector(".top-user span");
+      if (name) name.textContent = user.username;
+      if (role) role.textContent = user.role === "admin" ? "Administrator" : "Teacher";
+    }
+  }).catch(() => {});
   loadView("dashboard");
 }
 $("#loginForm").addEventListener("submit", async (e) => {
@@ -497,7 +506,12 @@ function renderDocuments() {
 }
 function renderRoles() {
   $("#content").innerHTML =
-    `<div class="page-head"><div><h1>Users & Roles</h1><p>Administrator access is enabled for this local version.</p></div></div><div class="panel"><h3>Administrator</h3><p><strong>Username:</strong> admin</p><p><strong>Role:</strong> Administrator</p><p>Default development password: <code>admin123</code></p></div>`;
+    `<div class="page-head"><div><h1>Users & Roles</h1><p>Separate administrator and teacher sign-in using Render environment variables.</p></div></div>
+    <div class="report-grid">
+      <div class="report-card"><i class="fa-solid fa-user-shield"></i><h3>Administrator</h3><p>Manages student registration, approval status, academic records, and exports.</p><strong>Full access</strong></div>
+      <div class="report-card"><i class="fa-solid fa-chalkboard-user"></i><h3>Teacher</h3><p>Can view the student list and record or update daily attendance. Destructive student actions and exports are restricted.</p><strong>Attendance access</strong></div>
+    </div>
+    <div class="panel" style="margin-top:18px"><h3>Configure accounts in Render</h3><p>Open your Render service → Environment. Set these variables with private, unique passwords:</p><ul><li><code>ADMIN_USERNAME</code></li><li><code>ADMIN_PASSWORD</code></li><li><code>TEACHER_USERNAME</code></li><li><code>TEACHER_PASSWORD</code></li></ul><p>Do not put passwords in GitHub or share them in chat. After saving environment variables, Render may redeploy the service.</p></div>`;
 }
 function renderSettings() {
   $("#content").innerHTML =

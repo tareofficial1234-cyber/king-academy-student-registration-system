@@ -25,3 +25,50 @@
 .quick-mark-actions .btn{width:100%;height:42px}
 @media(max-width:900px){.quick-mark-grid{grid-template-columns:repeat(2,minmax(150px,1fr))}}
 @media(max-width:600px){.quick-mark-grid{grid-template-columns:1fr}}
+
+
+/* Premium King Academy attendance experience */
+:root{--ka-navy:#09264d;--ka-blue:#123e70;--ka-gold:#d8ad52;--ka-ink:#172c46;--ka-muted:#6c7e94}
+.attendance-hero{position:relative;isolation:isolate;min-height:235px;border-radius:18px;overflow:hidden;margin-bottom:24px;background:#09264d url('https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1800&q=85') center 43%/cover no-repeat;box-shadow:0 14px 34px rgba(9,38,77,.18)}
+.attendance-hero:before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(5,25,53,.96) 0%,rgba(9,38,77,.87) 48%,rgba(9,38,77,.22) 100%)}
+.attendance-hero-copy{padding:34px 38px;color:#fff;max-width:760px}
+.attendance-eyebrow{display:inline-flex;align-items:center;gap:9px;color:#f1d18a;font-size:11px;font-weight:900;letter-spacing:1.8px}
+.attendance-hero h1{font-size:clamp(30px,4vw,43px);line-height:1.12;margin:14px 0 9px;color:#fff;letter-spacing:-.7px}
+.attendance-hero p{font-size:15px;color:#e3eaf5;margin:0;max-width:560px}
+.attendance-hero-meta{display:flex;gap:20px;flex-wrap:wrap;margin-top:23px;font-size:12px;color:#f7e6bd}
+.attendance-hero-meta span{display:flex;align-items:center;gap:8px}
+.attendance-page-head{align-items:flex-end;flex-wrap:wrap}
+.attendance-page-head h2{margin:0;color:var(--ka-navy);font-size:23px}
+.attendance-page-head p{color:var(--ka-muted);margin:7px 0 0}
+.attendance-toolbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.attendance-toolbar label,.attendance-controls label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:800;color:#53677f}
+.attendance-toolbar input,.attendance-controls input,.attendance-controls select{border:1px solid #dce4ef;border-radius:9px;padding:11px 12px;background:#fff;color:#1a304b;min-height:42px}
+.attendance-stats{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:12px;margin:20px 0}
+.attendance-stat{display:flex;align-items:center;gap:12px;min-width:0;padding:17px 14px;background:#fff;border:1px solid #e4eaf2;border-radius:13px;box-shadow:0 5px 18px rgba(13,39,74,.045)}
+.attendance-stat-icon{width:39px;height:39px;flex:0 0 39px;border-radius:11px;display:grid;place-items:center;font-size:16px}
+.attendance-stat-icon.navy{background:#e7eef8;color:#123e70}.attendance-stat-icon.green{background:#e0f6e9;color:#16834d}.attendance-stat-icon.red{background:#ffebeb;color:#c63f48}.attendance-stat-icon.gold{background:#fbf0d8;color:#9c711b}.attendance-stat-icon.slate{background:#edf1f5;color:#687a90}.attendance-stat-icon.blue{background:#e4f1ff;color:#1768ba}
+.attendance-stat small{display:block;color:#73839a;font-size:11px;font-weight:700;line-height:1.4}
+.attendance-stat strong{display:block;color:#112d50;font-size:25px;line-height:1.25;margin-top:4px;overflow-wrap:anywhere}
+.attendance-panel{border-radius:15px;padding:0;overflow:hidden}
+.attendance-controls{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding:19px;border-bottom:1px solid #e8edf4;background:linear-gradient(180deg,#fff,#fbfcfe)}
+.attendance-controls label{min-width:150px}
+.attendance-controls .attendance-search{flex:1;min-width:190px}
+.attendance-controls .btn{min-height:42px}
+.attendance-controls .btn.primary{background:var(--ka-navy);border-color:var(--ka-navy)}
+.attendance-controls .btn.primary:hover{background:#16477f}
+.attendance-table-wrap{overflow:auto}
+.attendance-table{min-width:800px}
+.attendance-table thead th{background:#f3f6fa;color:#536984;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.attendance-table tbody tr:hover{background:#fafcff}
+.attendance-student{display:flex;align-items:center;gap:10px;min-width:190px}
+.attendance-student strong{color:#213b59;font-size:13px}
+.attendance-avatar{width:35px;height:35px;object-fit:cover;border-radius:50%;border:2px solid #e9eef5}
+.attendance-avatar-fallback{display:grid;place-items:center;background:#eaf0f8;color:#234b7b;font-size:15px}
+.attendance-id{font-size:12px;font-weight:800;color:#345d8b}
+.attendance-status{min-width:140px;padding:9px 10px;border:1px solid #dbe4ef;border-radius:8px;background:#fff;color:#263e5a;font-weight:700}
+.attendance-note{min-width:150px;width:100%;padding:9px 10px;border:1px solid #e1e7ef;border-radius:8px}
+.attendance-status:focus,.attendance-note:focus,.attendance-toolbar input:focus,.attendance-controls input:focus{outline:2px solid rgba(216,173,82,.45);border-color:var(--ka-gold)}
+.attendance-footnote{margin:0;padding:14px 19px;background:#fbfcfe;border-top:1px solid #edf1f6;color:#6b7c91;font-size:12px}
+.attendance-footnote i{color:#b18a39;margin-right:7px}
+@media(max-width:1450px){.attendance-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.attendance-hero{min-height:220px}.attendance-hero-copy{padding:25px 21px}.attendance-hero:before{background:linear-gradient(90deg,rgba(5,25,53,.94),rgba(9,38,77,.72))}.attendance-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.attendance-stat{padding:12px 10px;gap:8px}.attendance-stat-icon{width:33px;height:33px;flex-basis:33px}.attendance-stat strong{font-size:22px}.attendance-toolbar{width:100%}.attendance-toolbar label{flex:1}.attendance-toolbar input{width:100%}.attendance-controls{align-items:stretch}.attendance-controls label{min-width:100%;}.attendance-controls .btn{width:100%;justify-content:center}.attendance-hero-meta{gap:11px;flex-direction:column}}

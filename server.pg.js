@@ -384,6 +384,7 @@ const studentFields = [
 app.post(
   "/api/students",
   auth,
+  adminOnly,
   upload.fields([
     { name: "photo", maxCount: 1 },
     { name: "document", maxCount: 1 },
@@ -431,6 +432,7 @@ app.post(
 app.put(
   "/api/students/:id",
   auth,
+  adminOnly,
   upload.fields([
     { name: "photo", maxCount: 1 },
     { name: "document", maxCount: 1 },
@@ -547,6 +549,7 @@ app.get(
 app.post(
   "/api/marks",
   auth,
+  adminOnly,
   wrap(async (req, res) => {
     const b = req.body || {},
       studentR = await pool.query("SELECT * FROM students WHERE id=$1", [
@@ -704,7 +707,9 @@ app.get(
             COUNT(*)::int AS total,
             COUNT(*) FILTER (WHERE LOWER(status) = 'approved')::int AS approved,
             COUNT(*) FILTER (WHERE LOWER(status) = 'pending')::int AS pending,
-            COUNT(*) FILTER (WHERE LOWER(status) = 'rejected')::int AS rejected
+            COUNT(*) FILTER (WHERE LOWER(status) = 'rejected')::int AS rejected,
+            COUNT(*) FILTER (WHERE LOWER(status) = 'cancelled')::int AS cancelled,
+            COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE)::int AS today
           FROM students
         `),
         pool.query(`
@@ -731,6 +736,8 @@ app.get(
       approved: studentsResult.rows[0].approved,
       pending: studentsResult.rows[0].pending,
       rejected: studentsResult.rows[0].rejected,
+      cancelled: studentsResult.rows[0].cancelled,
+      today: studentsResult.rows[0].today,
     };
 
     const byGrade = gradesResult.rows.sort(
@@ -824,6 +831,7 @@ app.get("/api/attendance/export.csv", auth, wrap(async (req, res) => {
 app.get(
   "/api/export.csv",
   auth,
+  adminOnly,
   wrap(async (_req, res) => {
     const r = await pool.query(
       "SELECT registration_id,first_name,middle_name,last_name,gender,date_of_birth,grade,program,academic_year,admission_date,phone,email,address,guardian_name,guardian_phone,status,created_at FROM students ORDER BY id DESC",
@@ -834,6 +842,7 @@ app.get(
 app.get(
   "/api/export-marks.csv",
   auth,
+  adminOnly,
   wrap(async (req, res) => {
     const rows = (
       await rankedResults(
@@ -858,6 +867,7 @@ app.get(
 app.get(
   "/api/export-subject-marks.csv",
   auth,
+  adminOnly,
   wrap(async (_req, res) => {
     const r = await pool.query(
       `SELECT s.registration_id,concat_ws(' ',s.first_name,s.last_name) AS student_name,s.grade,m.academic_year,m.subject,m.score,m.max_score,ROUND((m.score*100.0/NULLIF(m.max_score,0))::numeric,2) AS percentage,m.remark FROM marks m JOIN students s ON s.id=m.student_id ORDER BY s.grade,s.last_name,s.first_name,m.academic_year,m.subject`,

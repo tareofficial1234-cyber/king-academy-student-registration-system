@@ -111,6 +111,7 @@ async function loadView(view) {
   nav(view);
   try {
     if (view === "dashboard") return renderDashboard();
+    if (view === "attendance") return renderAttendance();
     if (view === "registration") return renderRegistration();
     if (["students", "search", "registrations"].includes(view))
       return renderStudents(view);
@@ -506,6 +507,89 @@ async function renderLogs() {
   $("#content").innerHTML =
     `<div class="page-head"><div><h1>Activity Logs</h1><p>Recent registration and academic record activity.</p></div></div><div class="panel">${d.activities.map((a) => `<div class="activity-item"><strong>${esc(a.action)}</strong><span>${esc(a.description)}</span><span>${fmt(a.created_at)}</span></div>`).join("")}</div>`;
 }
+
+async function renderAttendance() {
+  const today = new Date().toLocaleDateString("en-CA");
+  $("#content").innerHTML = `
+    <section class="attendance-hero">
+      <div class="attendance-hero-copy">
+        <span class="attendance-eyebrow"><i class="fa-solid fa-crown"></i> KING ACADEMY SCHOOL</span>
+        <h1>Student Attendance</h1>
+        <p>Every student. Every day. Every opportunity to succeed.</p>
+        <div class="attendance-hero-meta"><span><i class="fa-solid fa-shield-halved"></i> Secure attendance register</span><span><i class="fa-solid fa-database"></i> Persistent records</span></div>
+      </div>
+    </section>
+    <div class="page-head attendance-page-head"><div><h2>Daily register</h2><p>Mark attendance by date and grade. Your changes are saved to the school database.</p></div>
+      <div class="attendance-toolbar"><label>Attendance date<input id="attendanceDate" type="date" value="${today}"></label><button class="btn light" id="attendanceRefresh"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+    </div>
+    <div class="attendance-stats" id="attendanceStats"><div class="attendance-stat"><small>Loading students</small><strong>—</strong></div></div>
+    <div class="panel attendance-panel">
+      <div class="attendance-controls">
+        <label>Grade<select id="attendanceGrade"><option value="">All grades</option>${options.grades.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("")}</select></label>
+        <label class="attendance-search">Search student<input id="attendanceSearch" type="search" placeholder="Name or registration ID"></label>
+        <button class="btn light" id="attendanceAllPresent"><i class="fa-solid fa-check-double"></i> Mark all present</button>
+        <button class="btn primary" id="attendanceSave"><i class="fa-solid fa-floppy-disk"></i> Save attendance</button>
+      </div>
+      <div id="attendanceTable" class="attendance-table-wrap"><div class="empty">Loading student register…</div></div>
+      <p class="attendance-footnote"><i class="fa-solid fa-circle-info"></i> Only approved students appear here. Changing a status does not save it until you select <strong>Save attendance</strong>.</p>
+    </div>`;
+  $("#attendanceDate").addEventListener("change", loadAttendanceRows);
+  $("#attendanceGrade").addEventListener("change", loadAttendanceRows);
+  $("#attendanceSearch").addEventListener("input", debounceAttendance(loadAttendanceRows, 250));
+  $("#attendanceRefresh").onclick = loadAttendanceRows;
+  $("#attendanceAllPresent").onclick = () => {
+    $$("#attendanceTable select[data-student-id]").forEach(el => el.value = "Present");
+    toast("All visible students marked Present. Select Save attendance to commit.");
+  };
+  $("#attendanceSave").onclick = saveAttendanceRows;
+  await loadAttendanceRows();
+}
+function debounceAttendance(fn, delay) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+}
+async function loadAttendanceRows() {
+  const date = $("#attendanceDate")?.value;
+  if (!date) return;
+  const grade = $("#attendanceGrade")?.value || "";
+  const q = $("#attendanceSearch")?.value?.trim() || "";
+  $("#attendanceTable").innerHTML = '<div class="empty">Loading attendance…</div>';
+  const query = new URLSearchParams({date, grade, q});
+  const [data, summary] = await Promise.all([
+    api("/api/attendance?" + query.toString()),
+    api("/api/attendance/summary?" + new URLSearchParams({date,grade}).toString())
+  ]);
+  const stats = [
+    ["Approved students",summary.total,"fa-users","navy"],
+    ["Present",summary.present,"fa-circle-check","green"],
+    ["Absent",summary.absent,"fa-circle-xmark","red"],
+    ["Late",summary.late,"fa-clock","gold"],
+    ["Not marked",summary.unmarked,"fa-hourglass-half","slate"],
+    ["Attendance rate",summary.attendance_rate + "%","fa-chart-line","blue"]
+  ];
+  $("#attendanceStats").innerHTML = stats.map(([label,value,ico,tone])=>`<div class="attendance-stat"><span class="attendance-stat-icon ${tone}"><i class="fa-solid ${ico}"></i></span><div><small>${label}</small><strong>${value}</strong></div></div>`).join("");
+  const rows = data.rows;
+  if (!rows.length) { $("#attendanceTable").innerHTML = '<div class="empty">No approved students match this filter.</div>'; return; }
+  $("#attendanceTable").innerHTML = `<table class="data-table attendance-table"><thead><tr><th>Student</th><th>Registration ID</th><th>Grade</th><th>Attendance status</th><th>Notes (optional)</th></tr></thead><tbody>${rows.map(s=>{
+    const name = fullName(s);
+    const avatar = s.photo ? `<img class="attendance-avatar" src="/uploads/${encodeURIComponent(s.photo)}" alt="">` : '<span class="attendance-avatar attendance-avatar-fallback"><i class="fa-solid fa-user-graduate"></i></span>';
+    return `<tr><td><div class="attendance-student">${avatar}<strong>${esc(name)}</strong></div></td><td><span class="attendance-id">${esc(s.registration_id)}</span></td><td>${esc(s.grade)}</td><td><select class="attendance-status" data-student-id="${s.id}" aria-label="Attendance status for ${esc(name)}"><option value="">Choose status</option>${["Present","Absent","Late","Excused"].map(v=>`<option value="${v}" ${s.attendance_status===v?"selected":""}>${v}</option>`).join("")}</select></td><td><input class="attendance-note" data-note-id="${s.id}" maxlength="500" value="${esc(s.notes||"")}" placeholder="Optional note"></td></tr>`;
+  }).join("")}</tbody></table>`;
+}
+async function saveAttendanceRows() {
+  const date = $("#attendanceDate")?.value;
+  const controls = [...$$("#attendanceTable select[data-student-id]")];
+  const records = controls.filter(el=>el.value).map(el=>({student_id:Number(el.dataset.studentId),status:el.value,notes:$("#attendanceTable [data-note-id=\"" + el.dataset.studentId + "\"]")?.value||""}));
+  if (!records.length) { toast("Choose an attendance status for at least one student."); return; }
+  const button = $("#attendanceSave"); button.disabled = true; button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving…';
+  try {
+    const result = await api("/api/attendance/bulk",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,records})});
+    toast(`Saved ${result.saved} attendance records for ${date}.`);
+    await loadAttendanceRows();
+  } catch(e) { toast(e.message); }
+  finally { button.disabled = false; button.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save attendance'; }
+}
+
 function downloadCSV() {
   window.location = "/api/export.csv";
 }
